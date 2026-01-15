@@ -1,20 +1,19 @@
 import axios, { AxiosInstance } from 'axios';
 import { tokenStorage } from '../storage/tokenStorage';
 
-const FLIGHTS_API_URL = import.meta.env.VITE_FLIGHTS_API_URL || 'http://localhost:8000';
-const AIRPORT_API_URL = import.meta.env.VITE_AIRPORT_API_URL || 'http://localhost:8001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Create axios instance for Flights API
 export const flightsApiClient: AxiosInstance = axios.create({
-  baseURL: FLIGHTS_API_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Create axios instance for Airport API
+// Create axios instance for Airport API (usando la misma URL)
 export const airportApiClient: AxiosInstance = axios.create({
-  baseURL: AIRPORT_API_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -39,7 +38,7 @@ const responseErrorInterceptor = async (error: any) => {
     const refreshToken = tokenStorage.getRefreshToken();
     if (refreshToken) {
       try {
-        const response = await axios.post(`${FLIGHTS_API_URL}/api/token/refresh/`, {
+        const response = await axios.post(`${API_URL}/api/token/refresh/`, {
           refresh: refreshToken,
         });
         
