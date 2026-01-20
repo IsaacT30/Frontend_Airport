@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { bookingService } from '../../../application/airport-api/booking.service';
 import { Booking } from '../../../domain/airport-api/airport-api.types';
+import { useRole } from '../../../application/auth/useRole';
 
 export const BookingsPage = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const { canCreate, canEdit, canDelete, role } = useRole();
 
   useEffect(() => {
     loadBookings();
@@ -26,10 +28,15 @@ export const BookingsPage = () => {
     <PrivateLayout>
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">🎫 Bookings</h1>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-            + New Booking
-          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">🎫 Reservas</h1>
+            <p className="text-sm text-gray-500 mt-1">Tu rol: {role}</p>
+          </div>
+          {canCreate() && (
+            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+              + Nueva Reserva
+            </button>
+          )}
         </div>
 
         {loading ? (

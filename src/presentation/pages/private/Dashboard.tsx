@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { useAuth } from '../../../application/auth/useAuth';
+import { useRole } from '../../../application/auth/useRole';
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { role, isAdmin, isEditor, isOperador } = useRole();
   const [stats, setStats] = useState({
     flights: 0,
     bookings: 0,
@@ -107,7 +109,23 @@ export const Dashboard = () => {
       <div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back, {user?.first_name || user?.username}!</p>
+          <p className="text-gray-600 mt-2">
+            Bienvenido, {user?.first_name || user?.username}! 
+            <span className="ml-2 px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full font-semibold">
+              Rol: {role}
+            </span>
+          </p>
+        </div>
+
+        {/* Aviso de permisos */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-blue-900 mb-2">📋 Permisos de tu rol:</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            {isAdmin && <li>✅ ADMIN: Acceso completo - Crear, Editar, Eliminar y Ver todo</li>}
+            {isEditor && !isAdmin && <li>✅ EDITOR: Puede Crear, Editar y Ver (sin eliminar)</li>}
+            {isOperador && !isAdmin && !isEditor && <li>✅ OPERADOR: Puede Crear, Cambiar Estados y Ver</li>}
+            {!isAdmin && !isEditor && !isOperador && <li>✅ CLIENTE: Solo puede Ver información</li>}
+          </ul>
         </div>
 
         {/* Stats Cards */}

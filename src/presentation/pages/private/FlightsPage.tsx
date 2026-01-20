@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { flightService } from '../../../application/airport-api/flight.service';
 import { Flight } from '../../../domain/airport-api/airport-api.types';
+import { useRole } from '../../../application/auth/useRole';
 
 export const FlightsPage = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { canCreate, canEdit, canDelete, role } = useRole();
 
   useEffect(() => {
     loadFlights();
@@ -41,10 +43,15 @@ export const FlightsPage = () => {
     <PrivateLayout>
       <div>
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">✈️ Flights</h1>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-            + Add Flight
-          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">✈️ Vuelos</h1>
+            <p className="text-sm text-gray-500 mt-1">Tu rol: {role}</p>
+          </div>
+          {canCreate() && (
+            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+              + Agregar Vuelo
+            </button>
+          )}
         </div>
 
         {error && (
@@ -111,8 +118,13 @@ export const FlightsPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                        <button className="text-red-600 hover:text-red-900">Delete</button>
+                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">Ver</button>
+                        {canEdit() && (
+                          <button className="text-yellow-600 hover:text-yellow-900 mr-3">Editar</button>
+                        )}
+                        {canDelete() && (
+                          <button className="text-red-600 hover:text-red-900">Eliminar</button>
+                        )}
                       </td>
                     </tr>
                   ))
