@@ -1,6 +1,6 @@
-// Airport API Domain Types
+// Tipos de Dominio de API de Aeropuerto
 
-// Airline Types
+// Tipos de Aerolínea
 export interface Airline {
   id: number;
   name: string;
@@ -20,7 +20,7 @@ export interface AirlineCreate {
   contact_phone?: string;
 }
 
-// Airport Types
+// Tipos de Aeropuerto
 export interface Airport {
   id: number;
   name: string;
@@ -40,7 +40,7 @@ export interface AirportCreate {
   timezone?: string;
 }
 
-// Flight Types
+// Tipos de Vuelo
 export interface Flight {
   id: number;
   flight_number: string;
@@ -76,7 +76,7 @@ export interface FlightCreate {
   price?: number;
 }
 
-// Booking Types
+// Tipos de Reserva
 export interface Booking {
   id: number;
   booking_reference: string;
@@ -101,7 +101,7 @@ export interface BookingCreate {
   status?: string;
 }
 
-// Passenger Types
+// Tipos de Pasajero
 export interface Passenger {
   id: number;
   first_name: string;
@@ -125,7 +125,7 @@ export interface PassengerCreate {
   date_of_birth: string;
 }
 
-// Crew Types
+// Tipos de Tripulación
 export interface CrewMember {
   id: number;
   first_name: string;
@@ -159,7 +159,7 @@ export interface FlightCrew {
   created_at?: string;
 }
 
-// Maintenance Types
+// Tipos de Mantenimiento
 export interface MaintenanceRecord {
   id: number;
   aircraft_id: string;

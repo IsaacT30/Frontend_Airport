@@ -1,8 +1,3 @@
-// Utility Helper Functions for Airport Management System
-
-/**
- * Format date to localized string
- */
 export const formatDate = (date: string | Date): string => {
   if (!date) return 'N/A';
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -13,9 +8,6 @@ export const formatDate = (date: string | Date): string => {
   });
 };
 
-/**
- * Format datetime to localized string
- */
 export const formatDateTime = (datetime: string | Date): string => {
   if (!datetime) return 'N/A';
   const d = typeof datetime === 'string' ? new Date(datetime) : datetime;
@@ -28,9 +20,6 @@ export const formatDateTime = (datetime: string | Date): string => {
   });
 };
 
-/**
- * Format time from datetime
- */
 export const formatTime = (datetime: string | Date): string => {
   if (!datetime) return 'N/A';
   const d = typeof datetime === 'string' ? new Date(datetime) : datetime;
@@ -40,9 +29,6 @@ export const formatTime = (datetime: string | Date): string => {
   });
 };
 
-/**
- * Format currency
- */
 export const formatCurrency = (amount: string | number): string => {
   if (amount === null || amount === undefined) return '$0.00';
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -52,20 +38,13 @@ export const formatCurrency = (amount: string | number): string => {
   }).format(num);
 };
 
-/**
- * Capitalize first letter
- */
 export const capitalize = (str: string): string => {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-/**
- * Get status color for badges
- */
 export const getStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
-    // Flight statuses
     scheduled: 'bg-blue-100 text-blue-800',
     boarding: 'bg-yellow-100 text-yellow-800',
     departed: 'bg-green-100 text-green-800',
@@ -73,20 +52,16 @@ export const getStatusColor = (status: string): string => {
     cancelled: 'bg-red-100 text-red-800',
     delayed: 'bg-orange-100 text-orange-800',
     
-    // Booking statuses
     confirmed: 'bg-green-100 text-green-800',
     pending: 'bg-yellow-100 text-yellow-800',
     completed: 'bg-gray-100 text-gray-800',
     
-    // Invoice statuses
     paid: 'bg-green-100 text-green-800',
     unpaid: 'bg-red-100 text-red-800',
     overdue: 'bg-red-100 text-red-800',
     
-    // Maintenance statuses
     in_progress: 'bg-yellow-100 text-yellow-800',
     
-    // Crew statuses
     active: 'bg-green-100 text-green-800',
     on_leave: 'bg-yellow-100 text-yellow-800',
     retired: 'bg-gray-100 text-gray-800',
@@ -95,9 +70,6 @@ export const getStatusColor = (status: string): string => {
   return colors[status.toLowerCase()] || 'bg-gray-100 text-gray-800';
 };
 
-/**
- * Parse error message from API response
- */
 export const parseErrorMessage = (error: any): string => {
   if (typeof error === 'string') return error;
   
@@ -110,7 +82,6 @@ export const parseErrorMessage = (error: any): string => {
   }
   
   if (error.response?.data) {
-    // Handle validation errors
     const data = error.response.data;
     const errors = Object.keys(data).map(key => {
       const value = Array.isArray(data[key]) ? data[key][0] : data[key];
@@ -126,9 +97,6 @@ export const parseErrorMessage = (error: any): string => {
   return 'An unexpected error occurred';
 };
 
-/**
- * Download file from blob
- */
 export const downloadFile = (blob: Blob, filename: string): void => {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -140,9 +108,6 @@ export const downloadFile = (blob: Blob, filename: string): void => {
   window.URL.revokeObjectURL(url);
 };
 
-/**
- * Debounce function
- */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   delay: number
@@ -155,9 +120,6 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-/**
- * Copy text to clipboard
- */
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
     await navigator.clipboard.writeText(text);
@@ -168,39 +130,24 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
   }
 };
 
-/**
- * Validate email format
- */
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-/**
- * Validate phone format
- */
 export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^[\d\s\+\-\(\)]+$/;
   return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 7;
 };
 
-/**
- * Generate random ID (for temporary use)
- */
 export const generateTempId = (): string => {
   return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-/**
- * Sleep function for async operations
- */
 export const sleep = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-/**
- * Check if object is empty
- */
 export const isEmpty = (obj: any): boolean => {
   if (obj === null || obj === undefined) return true;
   if (Array.isArray(obj)) return obj.length === 0;
@@ -208,9 +155,6 @@ export const isEmpty = (obj: any): boolean => {
   return false;
 };
 
-/**
- * Safe JSON parse
- */
 export const safeJsonParse = <T = any>(json: string, defaultValue: T): T => {
   try {
     return JSON.parse(json);
@@ -220,17 +164,11 @@ export const safeJsonParse = <T = any>(json: string, defaultValue: T): T => {
   }
 };
 
-/**
- * Format flight number
- */
 export const formatFlightNumber = (flightNumber: string): string => {
   if (!flightNumber) return 'N/A';
   return flightNumber.toUpperCase();
 };
 
-/**
- * Calculate duration between two dates
- */
 export const calculateDuration = (start: string | Date, end: string | Date): string => {
   const startDate = typeof start === 'string' ? new Date(start) : start;
   const endDate = typeof end === 'string' ? new Date(end) : end;

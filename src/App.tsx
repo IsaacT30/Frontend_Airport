@@ -2,12 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './application/auth/useAuth';
 import { RequireAuth } from './presentation/routing/RequireAuth';
 
-// Public Pages
+// Páginas Públicas
 import { Home } from './presentation/pages/public/Home';
 import { Login } from './presentation/pages/public/Login';
 import { Register } from './presentation/pages/public/Register';
 
-// Private Pages
+// Páginas Privadas
 import { Dashboard } from './presentation/pages/private/Dashboard';
 import { FlightsPage } from './presentation/pages/private/FlightsPage';
 import { BookingsPage } from './presentation/pages/private/BookingsPage';

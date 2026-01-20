@@ -1,6 +1,6 @@
-// Flights API Domain Types (Billing API)
+// Tipos de Dominio de API de Vuelos (API de Facturación)
 
-// Catalog Types
+// Tipos de Catálogo
 export interface Product {
   id: number;
   name: string;
@@ -26,7 +26,7 @@ export interface ProductCreate {
   is_active?: boolean;
 }
 
-// Invoice Types
+// Tipos de Factura
 export interface Invoice {
   id: number;
   invoice_number: string;
@@ -79,7 +79,7 @@ export interface InvoiceItemCreate {
   discount?: string | number;
 }
 
-// User Types (beyond auth)
+// Tipos de Usuario (más allá de autenticación)
 export interface UserProfile {
   id: number;
   username: string;
@@ -102,7 +102,7 @@ export interface UserProfileUpdate {
   address?: string;
 }
 
-// Warehouse Types
+// Tipos de Almacén
 export interface Warehouse {
   id: number;
   name: string;
@@ -151,7 +151,7 @@ export interface WarehouseInventoryCreate {
   reorder_point?: number;
 }
 
-// Payment Types
+// Tipos de Pago
 export interface Payment {
   id: number;
   invoice: number;

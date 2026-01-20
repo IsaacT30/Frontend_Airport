@@ -1,11 +1,11 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { tokenStorage } from '../storage/tokenStorage';
 
-// Environment variables for API URLs
+// Variables de entorno para URLs de API
 const AIRPORT_API_URL = import.meta.env.VITE_AIRPORT_API_URL || 'http://localhost:8000';
 const BILLING_API_URL = import.meta.env.VITE_BILLING_API_URL || 'http://localhost:8001';
 
-// Create axios instance for Airport API
+// Crear instancia de axios para API de Aeropuerto
 export const airportApiClient: AxiosInstance = axios.create({
   baseURL: AIRPORT_API_URL,
   headers: {
@@ -14,7 +14,7 @@ export const airportApiClient: AxiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Create axios instance for Flights/Billing API
+// Crear instancia de axios para API de Vuelos/Facturación
 export const flightsApiClient: AxiosInstance = axios.create({
   baseURL: BILLING_API_URL,
   headers: {
@@ -23,7 +23,7 @@ export const flightsApiClient: AxiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor to add auth token
+// Interceptor de solicitud para agregar token de autenticación
 const requestInterceptor = (config: any) => {
   const token = tokenStorage.getAccessToken();
   if (token) {
@@ -32,7 +32,7 @@ const requestInterceptor = (config: any) => {
   return config;
 };
 
-// Response interceptor to handle auth errors
+// Interceptor de respuesta para manejar errores de autenticación
 const responseErrorInterceptor = async (error: AxiosError) => {
   const originalRequest: any = error.config;
 
@@ -42,7 +42,7 @@ const responseErrorInterceptor = async (error: AxiosError) => {
     const refreshToken = tokenStorage.getRefreshToken();
     if (refreshToken) {
       try {
-        // Try to refresh the token using the billing API
+        // Intentar refrescar el token usando la API de facturación
         const response = await axios.post(`${BILLING_API_URL}/api/token/refresh/`, {
           refresh: refreshToken,
         });
@@ -67,14 +67,14 @@ const responseErrorInterceptor = async (error: AxiosError) => {
   return Promise.reject(error);
 };
 
-// Add interceptors to Airport API client
+// Agregar interceptores al cliente de API de Aeropuerto
 airportApiClient.interceptors.request.use(requestInterceptor);
 airportApiClient.interceptors.response.use(
   (response) => response,
   responseErrorInterceptor
 );
 
-// Add interceptors to Flights/Billing API client
+// Agregar interceptores al cliente de API de Vuelos/Facturación
 flightsApiClient.interceptors.request.use(requestInterceptor);
 flightsApiClient.interceptors.response.use(
   (response) => response,

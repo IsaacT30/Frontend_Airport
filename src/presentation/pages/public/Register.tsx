@@ -30,7 +30,7 @@ export const Register = () => {
     setError('');
 
     if (formData.password !== formData.password2) {
-      setError('Passwords do not match');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
@@ -40,11 +40,20 @@ export const Register = () => {
       await register(formData);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      const errorMsg = err.response?.data?.username?.[0] || 
-                      err.response?.data?.email?.[0] || 
-                      err.response?.data?.detail || 
-                      'Registration failed. Please try again.';
-      setError(errorMsg);
+      console.error('Error en registro:', err);
+      console.error('Respuesta del servidor:', err.response);
+      
+      // Verificar si es un error 404 (endpoint no existe)
+      if (err.response?.status === 404) {
+        setError('El endpoint de registro no está disponible en el servidor. Por favor, contacta al administrador o usa las credenciales proporcionadas para iniciar sesión.');
+      } else {
+        const errorMsg = err.response?.data?.username?.[0] || 
+                        err.response?.data?.email?.[0] || 
+                        err.response?.data?.detail || 
+                        err.message ||
+                        'Error en el registro. Inténtalo de nuevo.';
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,8 +64,16 @@ export const Register = () => {
       <div className="flex items-center justify-center py-12">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-            <p className="text-gray-600 mt-2">Sign up to get started</p>
+            <h2 className="text-3xl font-bold text-gray-900">Crear Cuenta</h2>
+            <p className="text-gray-600 mt-2">Regístrate para comenzar</p>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4">
+            <p className="text-sm font-semibold">⚠️ Aviso Importante</p>
+            <p className="text-sm mt-1">
+              El registro de nuevos usuarios está temporalmente deshabilitado. 
+              Por favor, usa las credenciales proporcionadas para <Link to="/login" className="underline font-semibold">iniciar sesión</Link>.
+            </p>
           </div>
 
           {error && (
@@ -68,7 +85,7 @@ export const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Username *
+                Usuario *
               </label>
               <input
                 id="username"
@@ -83,7 +100,7 @@ export const Register = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
+                Correo Electrónico *
               </label>
               <input
                 id="email"
@@ -99,7 +116,7 @@ export const Register = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
+                  Nombre
                 </label>
                 <input
                   id="first_name"
@@ -113,7 +130,7 @@ export const Register = () => {
 
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
+                  Apellido
                 </label>
                 <input
                   id="last_name"
@@ -128,7 +145,7 @@ export const Register = () => {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password *
+                Contraseña *
               </label>
               <input
                 id="password"
@@ -143,7 +160,7 @@ export const Register = () => {
 
             <div>
               <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password *
+                Confirmar Contraseña *
               </label>
               <input
                 id="password2"
@@ -161,14 +178,14 @@ export const Register = () => {
               disabled={loading}
               className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? 'Creando cuenta...' : 'Registrarse'}
             </button>
           </form>
 
           <p className="text-center text-gray-600 mt-6">
-            Already have an account?{' '}
+            ¿Ya tienes una cuenta?{' '}
             <Link to="/login" className="text-indigo-600 hover:text-indigo-700 font-semibold">
-              Sign in
+              Iniciar sesión
             </Link>
           </p>
         </div>

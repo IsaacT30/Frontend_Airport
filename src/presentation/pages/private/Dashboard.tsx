@@ -13,7 +13,7 @@ export const Dashboard = () => {
   });
 
   useEffect(() => {
-    // In a real app, fetch dashboard stats from APIs
+    // En una aplicación real, obtener estadísticas del dashboard desde las APIs
     setStats({
       flights: 42,
       bookings: 156,
