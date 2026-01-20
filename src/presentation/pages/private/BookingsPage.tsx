@@ -7,7 +7,7 @@ import { useRole } from '../../../application/auth/useRole';
 export const BookingsPage = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const { canCreate, canEdit, canDelete, role } = useRole();
+  const { canCreate, role } = useRole();
 
   useEffect(() => {
     loadBookings();

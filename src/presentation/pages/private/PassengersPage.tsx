@@ -7,7 +7,7 @@ import { useRole } from '../../../application/auth/useRole';
 export const PassengersPage = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
-  const { canCreate, canEdit, canDelete, role } = useRole();
+  const { canCreate, role } = useRole();
 
   useEffect(() => {
     loadPassengers();
