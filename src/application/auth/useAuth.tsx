@@ -33,12 +33,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
 
   const login = async (credentials: LoginRequest) => {
     const response = await authService.login(credentials);
-    setUser(response.user);
+    if (response.user) {
+      setUser(response.user);
+    }
   };
 
   const register = async (data: RegisterRequest) => {
     const response = await authService.register(data);
-    setUser(response.user);
+    if (response.user) {
+      setUser(response.user);
+    }
   };
 
   const logout = () => {
