@@ -43,7 +43,7 @@ const responseErrorInterceptor = async (error: AxiosError) => {
     if (refreshToken) {
       try {
         // Intentar refrescar el token usando la API de facturación
-        const response = await axios.post(`${BILLING_API_URL}/api/token/refresh/`, {
+        const response = await axios.post(`${BILLING_API_URL}/api/auth/jwt/refresh/`, {
           refresh: refreshToken,
         });
         

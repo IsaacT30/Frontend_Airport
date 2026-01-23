@@ -21,10 +21,17 @@ export const Login = () => {
     setLoading(true);
 
     try {
+      console.log('Submitting login form...');
       await login({ username, password });
+      console.log('Login successful, navigating to:', from);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials. Please try again.');
+      console.error('Login failed:', err);
+      const errorMessage = err.response?.data?.detail 
+        || err.response?.data?.message 
+        || err.message 
+        || 'Invalid credentials. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

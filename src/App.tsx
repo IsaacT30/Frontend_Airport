@@ -12,8 +12,8 @@ import { Dashboard } from './presentation/pages/private/Dashboard';
 import { FlightsPage } from './presentation/pages/private/FlightsPage';
 import { BookingsPage } from './presentation/pages/private/BookingsPage';
 import { PassengersPage } from './presentation/pages/private/PassengersPage';
-import { CatalogPage } from './presentation/pages/private/CatalogPage';
-import { InvoicesPage } from './presentation/pages/private/InvoicesPage';
+// import { CatalogPage } from './presentation/pages/private/CatalogPage';
+// import { InvoicesPage } from './presentation/pages/private/InvoicesPage';
 
 import './App.css';
 
@@ -92,7 +92,12 @@ function App() {
               </RequireAuth>
             }
           />
-          <Route
+          {/* 
+            NOTA: Las siguientes rutas están deshabilitadas porque los endpoints
+            de la Billing/Flights API no están desplegados en el servidor.
+            Endpoints no disponibles: /api/catalog/, /api/invoices/, /api/users/, /api/warehouses/
+          */}
+          {/* <Route
             path="/catalog"
             element={
               <RequireAuth>
@@ -123,7 +128,7 @@ function App() {
                 <Dashboard />
               </RequireAuth>
             }
-          />
+          /> */}
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

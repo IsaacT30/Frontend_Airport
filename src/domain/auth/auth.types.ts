@@ -27,7 +27,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   access: string;
   refresh: string;
-  user: User;
+  user?: User;
 }
 
 export interface AuthContextType {
