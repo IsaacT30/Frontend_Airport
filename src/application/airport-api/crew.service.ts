@@ -4,8 +4,18 @@ import { CrewMember, CrewMemberCreate, FlightCrew } from '../../domain/airport-a
 export const crewService = {
   async getAllCrewMembers(params?: { status?: string; position?: string }): Promise<CrewMember[]> {
     try {
-      const response = await airportApiClient.get<CrewMember[]>('/api/crew/', { params });
-      return response.data;
+      const response = await airportApiClient.get<any>('/api/crew/', { params });
+      console.log('Crew response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        return response.data.results;
+      } else if (response.data && response.data.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching crew members:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch crew members');

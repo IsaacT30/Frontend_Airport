@@ -26,7 +26,9 @@ export const PassengersPage = () => {
 
   const loadPassengers = async () => {
     try {
+      setLoading(true);
       const data = await passengerService.getAllPassengers();
+      console.log('Passengers loaded:', data);
       setPassengers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load passengers:', err);
@@ -38,8 +40,6 @@ export const PassengersPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form data to send:', formData);
-    console.log('Token in storage:', localStorage.getItem('access_token'));
     setSaving(true);
     try {
       await passengerService.createPassenger(formData);
@@ -57,9 +57,8 @@ export const PassengersPage = () => {
       loadPassengers();
     } catch (err: any) {
       console.error('Error creating passenger:', err);
-      const errorMsg = err.response?.data?.message || err.response?.data?.detail || err.message || 'Error desconocido';
-      const errorDetails = err.response?.data ? JSON.stringify(err.response.data) : '';
-      alert(`❌ Error al crear pasajero: ${errorMsg}\n\nDetalles: ${errorDetails}`);
+      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
+      alert(`❌ Error al crear pasajero: ${errorMsg}`);
     } finally {
       setSaving(false);
     }
@@ -98,43 +97,72 @@ export const PassengersPage = () => {
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando pasajeros...</p>
+          </div>
+        ) : passengers.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="text-6xl mb-4">👤</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay pasajeros registrados</h3>
+            <p className="text-gray-600 mb-4">Comienza agregando tu primer pasajero</p>
+            {canCreate() && (
+              <button 
+                onClick={() => setShowModal(true)}
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700"
+              >
+                + Agregar Primer Pasajero
+              </button>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Passport</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nationality</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DOB</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pasaporte</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nacionalidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F. Nacimiento</th>
+                  {(canEdit() || canDelete()) && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {passengers.map((passenger) => (
-                  <tr key={passenger.id}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">
-                      {passenger.first_name} {passenger.last_name}
+                  <tr key={passenger.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">
+                        {passenger.first_name} {passenger.last_name}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{passenger.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{passenger.passport_number}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{passenger.nationality}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{new Date(passenger.date_of_birth).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {canEdit() && (
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">Editar</button>
-                      )}
-                      {canDelete() && (
-                        <button 
-                          onClick={() => handleDelete(passenger.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                        </button>
-                      )}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{passenger.email}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{passenger.passport_number}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{passenger.nationality}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{new Date(passenger.date_of_birth).toLocaleDateString()}</div>
+                    </td>
+                    {(canEdit() || canDelete()) && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {canEdit() && (
+                          <button className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
+                        )}
+                        {canDelete() && (
+                          <button 
+                            onClick={() => handleDelete(passenger.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Eliminar
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

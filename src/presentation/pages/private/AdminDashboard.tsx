@@ -78,34 +78,6 @@ export const AdminDashboard = () => {
       link: '/maintenance',
       color: 'bg-red-500',
     },
-    {
-      title: 'Catalogar',
-      description: 'Productos e inventario',
-      icon: '📦',
-      link: '/catalog',
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Facturas',
-      description: 'Gestión de facturas',
-      icon: '📄',
-      link: '/invoices',
-      color: 'bg-pink-500',
-    },
-    {
-      title: 'Almacenes',
-      description: 'Operaciones de almacén',
-      icon: '🏭',
-      link: '/warehouses',
-      color: 'bg-teal-500',
-    },
-    {
-      title: 'Usuarios',
-      description: 'Administrar usuarios del sistema',
-      icon: '👥',
-      link: '/users',
-      color: 'bg-gray-500',
-    },
   ];
 
   return (

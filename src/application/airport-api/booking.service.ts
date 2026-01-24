@@ -4,10 +4,23 @@ import { Booking, BookingCreate } from '../../domain/airport-api/airport-api.typ
 export const bookingService = {
   async getAllBookings(params?: { status?: string; passenger?: number; flight?: number }): Promise<Booking[]> {
     try {
-      const response = await airportApiClient.get<Booking[]>('/api/bookings/', { params });
-      return response.data;
+      const response = await airportApiClient.get<any>('/api/bookings/', { params });
+      console.log('Bookings response:', response.data);
+      
+      // Manejar diferentes formatos de respuesta
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        // Paginación DRF
+        return response.data.results;
+      } else if (response.data && response.data.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
+      console.error('Error details:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Failed to fetch bookings');
     }
   },

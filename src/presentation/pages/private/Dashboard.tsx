@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { useAuth } from '../../../application/auth/useAuth';
 import { useRole } from '../../../application/auth/useRole';
+import { flightService } from '../../../application/airport-api/flight.service';
+import { bookingService } from '../../../application/airport-api/booking.service';
+import { passengerService } from '../../../application/airport-api/passenger.service';
+import { airlineService } from '../../../application/airport-api/airline.service';
+import { airportService } from '../../../application/airport-api/airport.service';
 
 export const Dashboard = () => {
   const { user } = useAuth();
@@ -11,96 +16,89 @@ export const Dashboard = () => {
     flights: 0,
     bookings: 0,
     passengers: 0,
-    invoices: 0,
+    airlines: 0,
+    airports: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // En una aplicación real, obtener estadísticas del dashboard desde las APIs
-    setStats({
-      flights: 42,
-      bookings: 156,
-      passengers: 324,
-      invoices: 89,
-    });
+    loadStats();
   }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const [flights, bookings, passengers, airlines, airports] = await Promise.all([
+        flightService.getAllFlights().catch(() => []),
+        bookingService.getAllBookings().catch(() => []),
+        passengerService.getAllPassengers().catch(() => []),
+        airlineService.getAllAirlines().catch(() => []),
+        airportService.getAllAirports().catch(() => []),
+      ]);
+      
+      setStats({
+        flights: Array.isArray(flights) ? flights.length : 0,
+        bookings: Array.isArray(bookings) ? bookings.length : 0,
+        passengers: Array.isArray(passengers) ? passengers.length : 0,
+        airlines: Array.isArray(airlines) ? airlines.length : 0,
+        airports: Array.isArray(airports) ? airports.length : 0,
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const modules = [
     {
-      title: 'Flights Management',
-      description: 'Manage flight schedules, routes, and statuses',
+      title: 'Gestión de Vuelos',
+      description: 'Administrar horarios, rutas y estados de vuelos',
       icon: '✈️',
       link: '/flights',
       color: 'bg-blue-500',
     },
     {
-      title: 'Bookings',
-      description: 'View and manage passenger bookings',
+      title: 'Reservas',
+      description: 'Ver y gestionar reservas de pasajeros',
       icon: '🎫',
       link: '/bookings',
       color: 'bg-green-500',
     },
     {
-      title: 'Passengers',
-      description: 'Manage passenger information',
+      title: 'Pasajeros',
+      description: 'Gestionar información de pasajeros',
       icon: '👤',
       link: '/passengers',
       color: 'bg-purple-500',
     },
     {
-      title: 'Airlines',
-      description: 'Manage airline information and details',
+      title: 'Aerolíneas',
+      description: 'Administrar información de aerolíneas',
       icon: '🏢',
       link: '/airlines',
       color: 'bg-indigo-500',
     },
     {
-      title: 'Airports',
-      description: 'Manage airport information',
+      title: 'Aeropuertos',
+      description: 'Gestionar información de aeropuertos',
       icon: '🏛️',
       link: '/airports',
       color: 'bg-cyan-500',
     },
     {
-      title: 'Crew Members',
-      description: 'Manage crew members and assignments',
+      title: 'Tripulación',
+      description: 'Gestionar tripulación y asignaciones',
       icon: '👨‍✈️',
       link: '/crew',
       color: 'bg-orange-500',
     },
     {
-      title: 'Maintenance',
-      description: 'Track aircraft maintenance records',
+      title: 'Mantenimiento',
+      description: 'Seguimiento de mantenimiento de aeronaves',
       icon: '🔧',
       link: '/maintenance',
       color: 'bg-red-500',
-    },
-    {
-      title: 'Product Catalog',
-      description: 'Manage products and inventory',
-      icon: '📦',
-      link: '/catalog',
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Invoices',
-      description: 'Generate and manage invoices',
-      icon: '📄',
-      link: '/invoices',
-      color: 'bg-pink-500',
-    },
-    {
-      title: 'Warehouses',
-      description: 'Manage warehouse operations',
-      icon: '🏭',
-      link: '/warehouses',
-      color: 'bg-teal-500',
-    },
-    {
-      title: 'Users',
-      description: 'Manage system users',
-      icon: '👥',
-      link: '/users',
-      color: 'bg-gray-500',
     },
   ];
 
@@ -130,53 +128,62 @@ export const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-blue-100 rounded-full p-3">
-                <span className="text-2xl">✈️</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Total Flights</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.flights}</p>
-              </div>
+          {loading ? (
+            <div className="col-span-4 text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Cargando estadísticas...</p>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="bg-blue-100 rounded-full p-3">
+                    <span className="text-2xl">✈️</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-600 text-sm">Total de vuelos</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.flights}</p>
+                  </div>
+                </div>
+              </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-green-100 rounded-full p-3">
-                <span className="text-2xl">🎫</span>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="bg-green-100 rounded-full p-3">
+                    <span className="text-2xl">🎫</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-600 text-sm">Reservas</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.bookings}</p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.bookings}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-purple-100 rounded-full p-3">
-                <span className="text-2xl">👤</span>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="bg-purple-100 rounded-full p-3">
+                    <span className="text-2xl">👤</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-600 text-sm">Pasajeros</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.passengers}</p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Passengers</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.passengers}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="bg-pink-100 rounded-full p-3">
-                <span className="text-2xl">📄</span>
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="bg-indigo-100 rounded-full p-3">
+                    <span className="text-2xl">🏢</span>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-gray-600 text-sm">Aerolíneas</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.airlines}</p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Invoices</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.invoices}</p>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         {/* Modules Grid */}

@@ -18,10 +18,6 @@ import { AirlinesPage } from './presentation/pages/private/AirlinesPage';
 import { AirportsPage } from './presentation/pages/private/AirportsPage';
 import { CrewPage } from './presentation/pages/private/CrewPage';
 import { MaintenancePage } from './presentation/pages/private/MaintenancePage';
-import { CatalogPage } from './presentation/pages/private/CatalogPage';
-import { InvoicesPage } from './presentation/pages/private/InvoicesPage';
-import { WarehousesPage } from './presentation/pages/private/WarehousesPage';
-import { UsersPage } from './presentation/pages/private/UsersPage';
 
 import './App.css';
 
@@ -113,38 +109,6 @@ function App() {
             element={
               <RequireAuth>
                 <MaintenancePage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/catalog"
-            element={
-              <RequireAuth>
-                <CatalogPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/invoices"
-            element={
-              <RequireAuth>
-                <InvoicesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/warehouses"
-            element={
-              <RequireAuth>
-                <WarehousesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/users"
-            element={
-              <RequireAuth>
-                <UsersPage />
               </RequireAuth>
             }
           />

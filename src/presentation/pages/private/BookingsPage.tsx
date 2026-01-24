@@ -1,16 +1,31 @@
 import { useEffect, useState } from 'react';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { bookingService } from '../../../application/airport-api/booking.service';
-import { Booking } from '../../../domain/airport-api/airport-api.types';
+import { flightService } from '../../../application/airport-api/flight.service';
+import { passengerService } from '../../../application/airport-api/passenger.service';
+import { Booking, BookingCreate, Flight, Passenger } from '../../../domain/airport-api/airport-api.types';
 import { useRole } from '../../../application/auth/useRole';
 
 export const BookingsPage = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const { canCreate, role } = useRole();
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [formData, setFormData] = useState<BookingCreate>({
+    flight: 0,
+    passenger: 0,
+    seat_number: '',
+    total_price: 0,
+    status: 'pending',
+  });
+  const { canCreate, canDelete, role } = useRole();
 
   useEffect(() => {
     loadBookings();
+    loadFlights();
+    loadPassengers();
   }, []);
 
   const loadBookings = async () => {
@@ -25,6 +40,60 @@ export const BookingsPage = () => {
     }
   };
 
+  const loadFlights = async () => {
+    try {
+      const data = await flightService.getAllFlights();
+      setFlights(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error loading flights:', err);
+    }
+  };
+
+  const loadPassengers = async () => {
+    try {
+      const data = await passengerService.getAllPassengers();
+      setPassengers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error loading passengers:', err);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await bookingService.createBooking(formData);
+      alert('✅ Reserva creada exitosamente!');
+      setShowModal(false);
+      setFormData({
+        flight: 0,
+        passenger: 0,
+        seat_number: '',
+        total_price: 0,
+        status: 'pending',
+      });
+      loadBookings();
+    } catch (err: any) {
+      console.error('Error creating booking:', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
+      alert(`❌ Error al crear reserva: ${errorMsg}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('¿Estás seguro de cancelar esta reserva?')) return;
+    try {
+      await bookingService.deleteBooking(id);
+      alert('✅ Reserva cancelada');
+      loadBookings();
+    } catch (err) {
+      console.error('Error deleting booking:', err);
+      alert('❌ Error al cancelar reserva');
+    }
+  };
+
   return (
     <PrivateLayout>
       <div>
@@ -34,7 +103,10 @@ export const BookingsPage = () => {
             <p className="text-sm text-gray-500 mt-1">Tu rol: {role}</p>
           </div>
           {canCreate() && (
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+            <button 
+              onClick={() => setShowModal(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+            >
               + Nueva Reserva
             </button>
           )}
@@ -75,12 +147,102 @@ export const BookingsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">${booking.total_price}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button className="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                      <button className="text-red-600 hover:text-red-900">Cancel</button>
+                      {canDelete() && (
+                        <button 
+                          onClick={() => handleDelete(booking.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Modal Crear Reserva */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4">Nueva Reserva</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Vuelo</label>
+                    <select
+                      required
+                      value={formData.flight}
+                      onChange={(e) => setFormData({...formData, flight: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value={0}>Seleccione un vuelo</option>
+                      {flights.map(flight => (
+                        <option key={flight.id} value={flight.id}>
+                          {flight.flight_number} - {flight.origin_airport_name || `Airport ${flight.origin_airport}`} → {flight.destination_airport_name || `Airport ${flight.destination_airport}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pasajero</label>
+                    <select
+                      required
+                      value={formData.passenger}
+                      onChange={(e) => setFormData({...formData, passenger: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value={0}>Seleccione un pasajero</option>
+                      {passengers.map(passenger => (
+                        <option key={passenger.id} value={passenger.id}>
+                          {passenger.first_name} {passenger.last_name} - {passenger.passport_number}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Número de Asiento</label>
+                    <input
+                      type="text"
+                      value={formData.seat_number}
+                      onChange={(e) => setFormData({...formData, seat_number: e.target.value.toUpperCase()})}
+                      placeholder="12A"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Precio Total ($)</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="0.01"
+                      value={formData.total_price}
+                      onChange={(e) => setFormData({...formData, total_price: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Guardando...' : 'Guardar Reserva'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

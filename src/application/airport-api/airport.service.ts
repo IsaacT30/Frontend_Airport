@@ -4,8 +4,18 @@ import { Airport, AirportCreate } from '../../domain/airport-api/airport-api.typ
 export const airportService = {
   async getAllAirports(): Promise<Airport[]> {
     try {
-      const response = await airportApiClient.get<Airport[]>('/api/airports/');
-      return response.data;
+      const response = await airportApiClient.get<any>('/api/airports/');
+      console.log('Airports response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        return response.data.results;
+      } else if (response.data && response.data.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching airports:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch airports');

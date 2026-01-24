@@ -27,13 +27,6 @@ export const UserDashboard = () => {
       link: '/passengers',
       color: 'bg-purple-500',
     },
-    {
-      title: 'Catálogo',
-      description: 'Productos y servicios disponibles',
-      icon: '📦',
-      link: '/catalog',
-      color: 'bg-yellow-500',
-    },
   ];
 
   return (

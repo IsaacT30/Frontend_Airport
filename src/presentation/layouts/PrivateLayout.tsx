@@ -17,18 +17,14 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-    { name: 'Flights', href: '/flights', icon: '✈️' },
-    { name: 'Bookings', href: '/bookings', icon: '🎫' },
-    { name: 'Passengers', href: '/passengers', icon: '👤' },
-    { name: 'Airlines', href: '/airlines', icon: '🏢' },
-    { name: 'Airports', href: '/airports', icon: '🏛️' },
-    { name: 'Crew', href: '/crew', icon: '👨‍✈️' },
-    { name: 'Maintenance', href: '/maintenance', icon: '🔧' },
-    { name: 'Catalog', href: '/catalog', icon: '📦' },
-    { name: 'Invoices', href: '/invoices', icon: '📄' },
-    { name: 'Warehouses', href: '/warehouses', icon: '🏭' },
-    { name: 'Users', href: '/users', icon: '👥' },
+    { name: 'Panel', href: '/dashboard', icon: '📊' },
+    { name: 'Vuelos', href: '/flights', icon: '✈️' },
+    { name: 'Reservas', href: '/bookings', icon: '🎫' },
+    { name: 'Pasajeros', href: '/passengers', icon: '👤' },
+    { name: 'Aerolíneas', href: '/airlines', icon: '🏢' },
+    { name: 'Aeropuertos', href: '/airports', icon: '🏛️' },
+    { name: 'Multitud', href: '/crew', icon: '👨‍✈️' },
+    { name: 'Mantenimiento', href: '/maintenance', icon: '🔧' },
   ];
 
   return (

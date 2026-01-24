@@ -4,8 +4,18 @@ import { MaintenanceRecord, MaintenanceRecordCreate } from '../../domain/airport
 export const maintenanceService = {
   async getAllMaintenanceRecords(params?: { status?: string; aircraft_id?: string }): Promise<MaintenanceRecord[]> {
     try {
-      const response = await airportApiClient.get<MaintenanceRecord[]>('/api/maintenance/', { params });
-      return response.data;
+      const response = await airportApiClient.get<any>('/api/maintenance/', { params });
+      console.log('Maintenance response:', response.data);
+      
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        return response.data.results;
+      } else if (response.data && response.data.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching maintenance records:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch maintenance records');

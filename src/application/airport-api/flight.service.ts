@@ -4,10 +4,23 @@ import { Flight, FlightCreate } from '../../domain/airport-api/airport-api.types
 export const flightService = {
   async getAllFlights(params?: { status?: string; airline?: number }): Promise<Flight[]> {
     try {
-      const response = await airportApiClient.get<Flight[]>('/api/flights/', { params });
-      return response.data;
+      const response = await airportApiClient.get<any>('/api/flights/', { params });
+      console.log('Flights response:', response.data);
+      
+      // Manejar diferentes formatos de respuesta
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        // Paginación DRF
+        return response.data.results;
+      } else if (response.data && response.data.data) {
+        return Array.isArray(response.data.data) ? response.data.data : [];
+      }
+      
+      return [];
     } catch (error: any) {
       console.error('Error fetching flights:', error);
+      console.error('Error details:', error.response?.data);
       throw new Error(error.response?.data?.message || 'Failed to fetch flights');
     }
   },
