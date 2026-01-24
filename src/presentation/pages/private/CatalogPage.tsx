@@ -1,27 +1,16 @@
 import { useEffect, useState } from 'react';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
-import { catalogService } from '../../../application/flights-api/catalog.service';
 import { Product } from '../../../domain/flights-api/flights-api.types';
 
 export const CatalogPage = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_products, _setProducts] = useState<Product[]>([]);
+  const [_loading, _setLoading] = useState(false);
 
   useEffect(() => {
     // Este módulo no está disponible en el backend actual
     // Endpoint /api/catalog/ no desplegado
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      const data = await catalogService.getAllProducts();
-      setProducts(data);
-    } catch (err) {
-      console.error('Failed to load products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <PrivateLayout>

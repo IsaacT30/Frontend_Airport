@@ -1,27 +1,16 @@
 import { useEffect, useState } from 'react';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
-import { invoiceService } from '../../../application/flights-api/invoice.service';
 import { Invoice } from '../../../domain/flights-api/flights-api.types';
 
 export const InvoicesPage = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [_invoices, _setInvoices] = useState<Invoice[]>([]);
+  const [_loading, _setLoading] = useState(false);
 
   useEffect(() => {
     // Este módulo no está disponible en el backend actual
     // Endpoint /api/invoices/ no desplegado
   }, []);
 
-  const loadInvoices = async () => {
-    try {
-      const data = await invoiceService.getAllInvoices();
-      setInvoices(data);
-    } catch (err) {
-      console.error('Failed to load invoices:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <PrivateLayout>
