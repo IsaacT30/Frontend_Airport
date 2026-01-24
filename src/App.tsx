@@ -9,11 +9,19 @@ import { Register } from './presentation/pages/public/Register';
 
 // Páginas Privadas
 import { Dashboard } from './presentation/pages/private/Dashboard';
+import { AdminDashboard } from './presentation/pages/private/AdminDashboard';
+import { UserDashboard } from './presentation/pages/private/UserDashboard';
 import { FlightsPage } from './presentation/pages/private/FlightsPage';
 import { BookingsPage } from './presentation/pages/private/BookingsPage';
 import { PassengersPage } from './presentation/pages/private/PassengersPage';
-// import { CatalogPage } from './presentation/pages/private/CatalogPage';
-// import { InvoicesPage } from './presentation/pages/private/InvoicesPage';
+import { AirlinesPage } from './presentation/pages/private/AirlinesPage';
+import { AirportsPage } from './presentation/pages/private/AirportsPage';
+import { CrewPage } from './presentation/pages/private/CrewPage';
+import { MaintenancePage } from './presentation/pages/private/MaintenancePage';
+import { CatalogPage } from './presentation/pages/private/CatalogPage';
+import { InvoicesPage } from './presentation/pages/private/InvoicesPage';
+import { WarehousesPage } from './presentation/pages/private/WarehousesPage';
+import { UsersPage } from './presentation/pages/private/UsersPage';
 
 import './App.css';
 
@@ -33,6 +41,22 @@ function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <AdminDashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/user"
+            element={
+              <RequireAuth>
+                <UserDashboard />
               </RequireAuth>
             }
           />
@@ -64,7 +88,7 @@ function App() {
             path="/airlines"
             element={
               <RequireAuth>
-                <Dashboard />
+                <AirlinesPage />
               </RequireAuth>
             }
           />
@@ -72,7 +96,7 @@ function App() {
             path="/airports"
             element={
               <RequireAuth>
-                <Dashboard />
+                <AirportsPage />
               </RequireAuth>
             }
           />
@@ -80,7 +104,7 @@ function App() {
             path="/crew"
             element={
               <RequireAuth>
-                <Dashboard />
+                <CrewPage />
               </RequireAuth>
             }
           />
@@ -88,16 +112,11 @@ function App() {
             path="/maintenance"
             element={
               <RequireAuth>
-                <Dashboard />
+                <MaintenancePage />
               </RequireAuth>
             }
           />
-          {/* 
-            NOTA: Las siguientes rutas están deshabilitadas porque los endpoints
-            de la Billing/Flights API no están desplegados en el servidor.
-            Endpoints no disponibles: /api/catalog/, /api/invoices/, /api/users/, /api/warehouses/
-          */}
-          {/* <Route
+          <Route
             path="/catalog"
             element={
               <RequireAuth>
@@ -117,7 +136,7 @@ function App() {
             path="/warehouses"
             element={
               <RequireAuth>
-                <Dashboard />
+                <WarehousesPage />
               </RequireAuth>
             }
           />
@@ -125,10 +144,10 @@ function App() {
             path="/users"
             element={
               <RequireAuth>
-                <Dashboard />
+                <UsersPage />
               </RequireAuth>
             }
-          /> */}
+          />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />

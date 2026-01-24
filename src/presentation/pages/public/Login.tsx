@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../application/auth/useAuth';
 import { PublicLayout } from '../../layouts/PublicLayout';
+import { authService } from '../../../application/auth/auth.service';
 
 export const Login = () => {
   const [username, setUsername] = useState('');
@@ -23,8 +24,22 @@ export const Login = () => {
     try {
       console.log('Submitting login form...');
       await login({ username, password });
-      console.log('Login successful, navigating to:', from);
-      navigate(from, { replace: true });
+      
+      // Obtener el usuario actual para verificar su rol
+      const currentUser = authService.getCurrentUserFromStorage();
+      
+      // Redirigir según el rol del usuario
+      let redirectPath = from;
+      if (from === '/dashboard') {
+        if (currentUser?.is_superuser || currentUser?.is_staff) {
+          redirectPath = '/admin';
+        } else {
+          redirectPath = '/user';
+        }
+      }
+      
+      console.log('Login successful, navigating to:', redirectPath);
+      navigate(redirectPath, { replace: true });
     } catch (err: any) {
       console.error('Login failed:', err);
       const errorMessage = err.response?.data?.detail 

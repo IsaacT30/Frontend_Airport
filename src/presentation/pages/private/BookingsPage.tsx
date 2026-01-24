@@ -16,9 +16,10 @@ export const BookingsPage = () => {
   const loadBookings = async () => {
     try {
       const data = await bookingService.getAllBookings();
-      setBookings(data);
+      setBookings(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load bookings:', err);
+      setBookings([]);
     } finally {
       setLoading(false);
     }

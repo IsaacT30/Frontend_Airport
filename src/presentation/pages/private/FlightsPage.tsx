@@ -18,10 +18,13 @@ export const FlightsPage = () => {
     try {
       setLoading(true);
       const data = await flightService.getAllFlights();
-      setFlights(data);
+      // Asegurar que data sea un array
+      setFlights(Array.isArray(data) ? data : []);
+      setError('');
     } catch (err: any) {
-      setError('Failed to load flights');
-      console.error(err);
+      setError('Error al cargar vuelos. Verifica tu conexión.');
+      console.error('Error loading flights:', err);
+      setFlights([]);
     } finally {
       setLoading(false);
     }

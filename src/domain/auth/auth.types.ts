@@ -8,6 +8,7 @@ export interface User {
   roles?: string[];
   is_staff?: boolean;
   is_superuser?: boolean;
+  is_active?: boolean;
 }
 
 export interface LoginRequest {
