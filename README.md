@@ -191,15 +191,6 @@ Rol: CLIENTE
 - [x] Interceptor de Axios para tokens
 - [x] Logout y limpieza de sesión
 
-### ⚠️ Limitaciones Conocidas
-
-**Error 405 en Creación de Pasajeros**
-- El backend responde con `405 Method Not Allowed` al intentar crear pasajeros
-- El token se envía correctamente (`Authorization: Bearer ...`)
-- Los datos del formulario son válidos
-- **Causa**: Configuración de permisos del backend que restringe POST en `/api/passengers/`
-- **Estado**: No es un error del frontend, requiere ajuste en el backend
-
 **Módulos sin Backend**
 - Catálogo, Facturas, Almacenes y Usuarios muestran mensaje de "No Disponible"
 - Los endpoints no están desplegados en el servidor actual
