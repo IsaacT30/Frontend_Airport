@@ -65,7 +65,7 @@ export const AdminDashboard = () => {
       color: 'bg-cyan-500',
     },
     {
-      title: 'Multitud',
+      title: 'Tripulación',
       description: 'Tripulación y asignaciones',
       icon: '👨‍✈️',
       link: '/crew',

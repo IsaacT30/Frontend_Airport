@@ -23,7 +23,7 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
     { name: 'Pasajeros', href: '/passengers', icon: '👤' },
     { name: 'Aerolíneas', href: '/airlines', icon: '🏢' },
     { name: 'Aeropuertos', href: '/airports', icon: '🏛️' },
-    { name: 'Multitud', href: '/crew', icon: '👨‍✈️' },
+    { name: 'Tripulación', href: '/crew', icon: '👨‍✈️' },
     { name: 'Mantenimiento', href: '/maintenance', icon: '🔧' },
   ];
 
