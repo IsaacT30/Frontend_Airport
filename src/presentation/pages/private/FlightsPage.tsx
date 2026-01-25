@@ -6,7 +6,7 @@ import { airlineService } from '../../../application/airport-api/airline.service
 import { airportService } from '../../../application/airport-api/airport.service';
 import { passengerService } from '../../../application/airport-api/passenger.service';
 import { bookingService } from '../../../application/airport-api/booking.service';
-import { Flight, FlightCreate, Airline, Airport } from '../../../domain/airport-api/airport-api.types';
+import { Flight, FlightCreate, Airline, Airport, Passenger } from '../../../domain/airport-api/airport-api.types';
 import { useRole } from '../../../application/auth/useRole';
 import { useAuth } from '../../../application/auth/useAuth';
 
@@ -24,6 +24,7 @@ export const FlightsPage = () => {
   const [saving, setSaving] = useState(false);
   const [airlines, setAirlines] = useState<Airline[]>([]);
   const [airports, setAirports] = useState<Airport[]>([]);
+  const [currentPassenger, setCurrentPassenger] = useState<Passenger | null>(null);
   const [formData, setFormData] = useState<FlightCreate>({
     flight_number: '',
     airline: 0,
@@ -44,7 +45,54 @@ export const FlightsPage = () => {
     loadFlights();
     loadAirlines();
     loadAirports();
-  }, []);
+    if (role === 'CLIENTE') {
+      loadCurrentPassenger();
+    }
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadCurrentPassenger = async () => {
+    if (!user) return;
+    try {
+      const passengers = await passengerService.getAllPassengers();
+      const found = passengers.find(p => p.user === Number(user.id) || p.email === user.email);
+      if (found) {
+        setCurrentPassenger(found);
+      }
+    } catch (err) {
+      console.error('Error identifying passenger:', err);
+    }
+  };
+
+  const handleBook = async (flight: Flight) => {
+    if (!currentPassenger) {
+      alert('⚠️ No se encontró un perfil de pasajero asociado a tu cuenta. Contacta a soporte.');
+      return;
+    }
+
+    if (!confirm(`¿Deseas reservar el vuelo ${flight.flight_number} por $${flight.price}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await bookingService.createBooking({
+        flight: flight.id,
+        passenger: currentPassenger.id,
+        seat_number: 'ANY', // Opcional o asignar uno
+        total_price: flight.price || 0,
+        status: 'pending'
+      });
+      alert('✅ ¡Vuelo reservado exitosamente! Redirigiendo a tus reservas...');
+      navigate('/bookings');
+    } catch (err: unknown) {
+      console.error('Error booking flight:', err);
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg = error.response?.data?.detail || error.message || 'Error al reservar';
+      alert(`❌ Error al reservar: ${errorMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadFlights = async () => {
     try {
@@ -53,7 +101,7 @@ export const FlightsPage = () => {
       // Asegurar que data sea un array
       setFlights(Array.isArray(data) ? data : []);
       setError('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Error al cargar vuelos. Verifica tu conexión.');
       console.error('Error loading flights:', err);
       setFlights([]);
@@ -66,7 +114,7 @@ export const FlightsPage = () => {
     try {
       const data = await airlineService.getAllAirlines();
       setAirlines(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error loading airlines:', err);
     }
   };
@@ -75,7 +123,7 @@ export const FlightsPage = () => {
     try {
       const data = await airportService.getAllAirports();
       setAirports(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error loading airports:', err);
     }
   };
@@ -110,39 +158,36 @@ export const FlightsPage = () => {
       setEditingFlight(null);
       resetForm();
       loadFlights();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving flight:', err);
-      console.error('Response data:', err.response?.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const error = err as { response?: { data?: any }; message?: string };
+      console.error('Response data:', error.response?.data);
       
       // Extraer mensaje de error más detallado
       let errorMsg = 'Error desconocido';
-      if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMsg = err.response.data;
-        } else if (err.response.data.detail) {
-          errorMsg = err.response.data.detail;
-        } else if (err.response.data.message) {
-          errorMsg = err.response.data.message;
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMsg = error.response.data.detail;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
         } else {
           // Mostrar errores de validación de campos
-          const errors = Object.entries(err.response.data)
+          const errors = Object.entries(error.response.data)
             .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
             .join('\n');
-          errorMsg = errors || err.message;
+          errorMsg = errors || error.message || 'Error desconocido';
         }
-      } else if (err.message) {
-        errorMsg = err.message;
+      } else if (error.message) {
+        errorMsg = error.message;
       }
       
       alert(`❌ Error al guardar vuelo:\n${errorMsg}`);
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleViewDetails = (flight: Flight) => {
-    setSelectedFlight(flight);
-    setShowDetailModal(true);
   };
 
   const handleEdit = (flight: Flight) => {
@@ -170,8 +215,8 @@ export const FlightsPage = () => {
       available_seats: flight.available_seats || 100,
       total_seats: flight.total_seats || 100,
       price: flight.price || 0,
-      aircraft_type: (flight as any).aircraft_type || 'Boeing 737',
-      base_price: (flight as any).base_price || flight.price || 0,
+      aircraft_type: (flight as Flight & { aircraft_type?: string }).aircraft_type || 'Boeing 737',
+      base_price: (flight as Flight & { base_price?: number }).base_price || flight.price || 0,
     });
     setShowModal(true);
   };
@@ -371,6 +416,14 @@ export const FlightsPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {role === 'CLIENTE' && (
+                          <button
+                            onClick={() => handleBook(flight)}
+                            className="text-green-600 hover:text-green-900 mr-3 font-bold"
+                          >
+                            Reservar
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleViewFlight(flight)}
                           className="text-indigo-600 hover:text-indigo-900 mr-3"

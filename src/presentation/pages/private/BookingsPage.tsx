@@ -6,6 +6,7 @@ import { flightService } from '../../../application/airport-api/flight.service';
 import { passengerService } from '../../../application/airport-api/passenger.service';
 import { Booking, BookingCreate, Flight, Passenger } from '../../../domain/airport-api/airport-api.types';
 import { useRole } from '../../../application/auth/useRole';
+import { useAuth } from '../../../application/auth/useAuth';
 
 export const BookingsPage = () => {
   const location = useLocation();
@@ -18,6 +19,7 @@ export const BookingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [currentPassenger, setCurrentPassenger] = useState<Passenger | null>(null);
   const [formData, setFormData] = useState<BookingCreate>({
     flight: 0,
     passenger: 0,
@@ -26,25 +28,63 @@ export const BookingsPage = () => {
     status: 'pending',
   });
   const { canCreate, canDelete, role } = useRole();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Agregar un pequeño delay para asegurar que el backend procesó la reserva
-    const timer = setTimeout(() => {
+    const init = async () => {
+      await loadPassengers();
+      await loadFlights();
+    };
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (passengers.length > 0) {
+      identifyCurrentPassenger();
+    }
+  }, [passengers, user]);
+
+  useEffect(() => {
+    if (!loading && (role !== 'CLIENTE' || currentPassenger)) {
       loadBookings();
-      loadFlights();
-      loadPassengers();
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [location]);
+    }
+  }, [currentPassenger, role, location]);
+
+  const identifyCurrentPassenger = () => {
+    if (!user) return;
+    const found = passengers.find(p => p.user === Number(user.id) || p.email === user.email);
+    if (found) {
+      setCurrentPassenger(found);
+      console.log('Current passenger identified:', found);
+    }
+  };
 
   const loadBookings = async () => {
     try {
       setLoading(true);
-      console.log('Cargando reservas...');
-      const data = await bookingService.getAllBookings();
-      console.log('Reservas recibidas:', data);
-      setBookings(Array.isArray(data) ? data : []);
+      const params: any = {};
+      
+      // Si es cliente, filtrar por su ID de pasajero
+      if (role === 'CLIENTE') {
+        if (currentPassenger) {
+          params.passenger = currentPassenger.id;
+        } else {
+          // Si no se encuentra el pasajero, no cargar nada aún
+          setLoading(false);
+          return;
+        }
+      }
+
+      console.log('Cargando reservas con params:', params);
+      const data = await bookingService.getAllBookings(params);
+      
+      // Filtrado adicional en el cliente si la API no filtra
+      let filteredData = Array.isArray(data) ? data : [];
+      if (role === 'CLIENTE' && currentPassenger) {
+        filteredData = filteredData.filter(b => b.passenger === currentPassenger.id);
+      }
+      
+      setBookings(filteredData);
     } catch (err) {
       console.error('Failed to load bookings:', err);
       setBookings([]);
@@ -71,11 +111,21 @@ export const BookingsPage = () => {
     }
   };
 
+  const handlePay = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await bookingService.createBooking(formData);
+      const bookingData = {
+        ...formData,
+        passenger: role === 'CLIENTE' && currentPassenger ? currentPassenger.id : formData.passenger
+      };
+      
+      await bookingService.createBooking(bookingData);
       alert('✅ Reserva creada exitosamente!');
       setShowModal(false);
       setFormData({
@@ -111,11 +161,6 @@ export const BookingsPage = () => {
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
     setShowDetailModal(true);
-  };
-
-  const handlePay = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setShowPaymentModal(true);
   };
 
   const handlePaymentConfirm = async (paymentData: { cardNumber: string; cardName: string; expiryDate: string; cvv: string }) => {
@@ -203,10 +248,10 @@ export const BookingsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">${booking.total_price}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                      {booking.status === 'pending' && (
-                        <button 
+                      {booking.status === 'pending' && role === 'CLIENTE' && (
+                        <button
                           onClick={() => handlePay(booking)}
-                          className="text-green-600 hover:text-green-900 font-semibold"
+                          className="text-green-600 hover:text-green-900 font-bold"
                         >
                           💳 Pagar
                         </button>
@@ -217,7 +262,7 @@ export const BookingsPage = () => {
                       >
                         👁️ Ver
                       </button>
-                      {canDelete() && booking.status !== 'confirmed' && (
+                      {(canDelete() || (role === 'CLIENTE' && booking.status === 'pending')) && (
                         <button 
                           onClick={() => handleDelete(booking.id)}
                           className="text-red-600 hover:text-red-900"
