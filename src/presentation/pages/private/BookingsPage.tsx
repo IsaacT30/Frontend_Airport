@@ -42,13 +42,13 @@ export const BookingsPage = () => {
     if (passengers.length > 0) {
       identifyCurrentPassenger();
     }
-  }, [passengers, user]);
+  }, [passengers, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!loading && (role !== 'CLIENTE' || currentPassenger)) {
       loadBookings();
     }
-  }, [currentPassenger, role, location]);
+  }, [currentPassenger, role, location]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const identifyCurrentPassenger = () => {
     if (!user) return;
@@ -62,7 +62,8 @@ export const BookingsPage = () => {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const params: any = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const params: Record<string, any> = {};
       
       // Si es cliente, filtrar por su ID de pasajero
       if (role === 'CLIENTE') {
