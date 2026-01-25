@@ -129,7 +129,7 @@ export const API_ENDPOINTS = {
   // Autenticación
   LOGIN: '/api/token/',
   REFRESH: '/api/token/refresh/',
-  REGISTER: '/api/users/register/',
+  REGISTER: '/api/passengers/users/',
   
   // API de Aeropuerto
   AIRLINES: '/api/airlines/',

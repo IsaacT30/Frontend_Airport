@@ -24,10 +24,8 @@ class AuthService {
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     try {
-      // Si la API no tiene endpoint de registro, comentar esto temporalmente
-      // await airportApiClient.post('/api/auth/register/', data);
+      await airportApiClient.post('/api/passengers/users/', data);
       
-      // Por ahora, solo hacer login si el usuario ya existe
       return await this.login({
         username: data.username,
         password: data.password,

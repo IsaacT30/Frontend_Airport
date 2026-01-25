@@ -68,21 +68,13 @@ export const Register = () => {
             <p className="text-gray-600 mt-2">Regístrate para comenzar</p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
-            <p className="text-sm font-semibold">⚠️ Aviso Importante</p>
-            <p className="text-sm mt-1">
-              El registro de nuevos usuarios está temporalmente deshabilitado. 
-              Por favor, usa las credenciales proporcionadas para <Link to="/login" className="underline font-semibold">iniciar sesión</Link>.
-            </p>
-          </div>
-
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 opacity-50 pointer-events-none">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 Usuario *
