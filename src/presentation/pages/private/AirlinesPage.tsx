@@ -9,6 +9,7 @@ export const AirlinesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AirlineCreate>({
     name: '',
     code: '',
@@ -41,17 +42,41 @@ export const AirlinesPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await airlineService.createAirline(formData);
-      alert('✅ Aerolínea creada exitosamente!');
+      if (editingId) {
+        await airlineService.updateAirline(editingId, formData);
+        alert('✅ Aerolínea actualizada exitosamente!');
+      } else {
+        await airlineService.createAirline(formData);
+        alert('✅ Aerolínea creada exitosamente!');
+      }
       setShowModal(false);
+      setEditingId(null);
       setFormData({ name: '', code: '', country: '', contact_email: '', contact_phone: '' });
       loadAirlines();
     } catch (err) {
-      console.error('Error creating airline:', err);
-      alert('❌ Error al crear aerolínea');
+      console.error('Error saving airline:', err);
+      alert('❌ Error al guardar aerolínea');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEdit = (airline: Airline) => {
+    setEditingId(airline.id);
+    setFormData({
+      name: airline.name,
+      code: airline.code,
+      country: airline.country,
+      contact_email: airline.contact_email || '',
+      contact_phone: airline.contact_phone || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData({ name: '', code: '', country: '', contact_email: '', contact_phone: '' });
   };
 
   const handleDelete = async (id: number) => {
@@ -131,7 +156,10 @@ export const AirlinesPage = () => {
                     {(canEdit() || canDelete()) && (
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {canEdit() && (
-                          <button className="text-indigo-600 hover:text-indigo-900 mr-4">
+                          <button 
+                            onClick={() => handleEdit(airline)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
                             Editar
                           </button>
                         )}
@@ -152,11 +180,13 @@ export const AirlinesPage = () => {
           </div>
         )}
 
-        {/* Modal para crear aerolínea */}
+        {/* Modal para crear/editar aerolínea */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-lg w-full">
-              <h2 className="text-2xl font-bold mb-6">Agregar Aerolínea</h2>
+              <h2 className="text-2xl font-bold mb-6">
+                {editingId ? 'Editar Aerolínea' : 'Agregar Aerolínea'}
+              </h2>
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div>
@@ -213,7 +243,7 @@ export const AirlinesPage = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancelar
@@ -223,7 +253,7 @@ export const AirlinesPage = () => {
                     disabled={saving}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {saving ? 'Guardando...' : 'Guardar'}
+                    {saving ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>
               </form>

@@ -9,6 +9,7 @@ export const AirportsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AirportCreate>({
     name: '',
     code: '',
@@ -41,17 +42,41 @@ export const AirportsPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await airportService.createAirport(formData);
-      alert('✅ Aeropuerto creado exitosamente!');
+      if (editingId) {
+        await airportService.updateAirport(editingId, formData);
+        alert('✅ Aeropuerto actualizado exitosamente!');
+      } else {
+        await airportService.createAirport(formData);
+        alert('✅ Aeropuerto creado exitosamente!');
+      }
       setShowModal(false);
+      setEditingId(null);
       setFormData({ name: '', code: '', city: '', country: '', timezone: '' });
       loadAirports();
     } catch (err) {
-      console.error('Error creating airport:', err);
-      alert('❌ Error al crear aeropuerto');
+      console.error('Error saving airport:', err);
+      alert('❌ Error al guardar aeropuerto');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEdit = (airport: Airport) => {
+    setEditingId(airport.id);
+    setFormData({
+      name: airport.name,
+      code: airport.code,
+      city: airport.city,
+      country: airport.country,
+      timezone: airport.timezone || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setFormData({ name: '', code: '', city: '', country: '', timezone: '' });
   };
 
   const handleDelete = async (id: number) => {
@@ -137,7 +162,10 @@ export const AirportsPage = () => {
                     {(canEdit() || canDelete()) && (
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {canEdit() && (
-                          <button className="text-indigo-600 hover:text-indigo-900 mr-4">
+                          <button 
+                            onClick={() => handleEdit(airport)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
                             Editar
                           </button>
                         )}
@@ -158,11 +186,13 @@ export const AirportsPage = () => {
           </div>
         )}
 
-        {/* Modal para crear aeropuerto */}
+        {/* Modal para crear/editar aeropuerto */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-lg w-full">
-              <h2 className="text-2xl font-bold mb-6">Agregar Aeropuerto</h2>
+              <h2 className="text-2xl font-bold mb-6">
+                {editingId ? 'Editar Aeropuerto' : 'Agregar Aeropuerto'}
+              </h2>
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div>
@@ -221,7 +251,7 @@ export const AirportsPage = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancelar
@@ -231,7 +261,7 @@ export const AirportsPage = () => {
                     disabled={saving}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {saving ? 'Guardando...' : 'Guardar'}
+                    {saving ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar'}
                   </button>
                 </div>
               </form>
