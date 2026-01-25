@@ -10,6 +10,7 @@ interface PrivateLayoutProps {
 export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
   const { user, logout } = useAuth();
   const { role } = useRole();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
