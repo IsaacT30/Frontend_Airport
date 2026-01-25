@@ -18,6 +18,7 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
 
   const navigation = [
     { name: 'Panel', href: '/dashboard', icon: '📊' },
+    { name: 'Buscar Vuelos', href: '/search-flights', icon: '🔍' },
     { name: 'Vuelos', href: '/flights', icon: '✈️' },
     { name: 'Reservas', href: '/bookings', icon: '🎫' },
     { name: 'Pasajeros', href: '/passengers', icon: '👤' },

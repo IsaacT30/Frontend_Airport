@@ -7,6 +7,13 @@ export const UserDashboard = () => {
 
   const userModules = [
     {
+      title: 'Buscar Vuelos',
+      description: 'Encuentra y reserva tu próximo vuelo',
+      icon: '🔍',
+      link: '/search-flights',
+      color: 'bg-indigo-500',
+    },
+    {
       title: 'Mis Vuelos',
       description: 'Ver vuelos disponibles y horarios',
       icon: '✈️',
@@ -44,14 +51,20 @@ export const UserDashboard = () => {
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
           <h3 className="font-semibold text-blue-900 mb-3 text-lg">✨ Tus Opciones</h3>
-          <p className="text-blue-800">
-            Como usuario puedes consultar vuelos, gestionar tus reservas y ver el catálogo de servicios disponibles.
+          <p className="text-blue-800 mb-3">
+            Como usuario puedes consultar vuelos, hacer reservas, realizar pagos y gestionar tus viajes.
           </p>
+          <Link 
+            to="/search-flights"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
+          >
+            ✈️ Reservar Vuelo Ahora
+          </Link>
         </div>
 
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Mis Servicios</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {userModules.map((module) => (
               <Link
                 key={module.title}

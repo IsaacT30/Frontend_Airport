@@ -6,17 +6,25 @@ export const bookingService = {
     try {
       const response = await airportApiClient.get<any>('/api/bookings/', { params });
       console.log('Bookings response:', response.data);
+      console.log('Bookings response type:', typeof response.data);
+      console.log('Is array?', Array.isArray(response.data));
+      console.log('Has results?', response.data?.results);
       
       // Manejar diferentes formatos de respuesta
       if (Array.isArray(response.data)) {
+        console.log('Returning direct array, length:', response.data.length);
         return response.data;
       } else if (response.data && Array.isArray(response.data.results)) {
         // Paginación DRF
+        console.log('Returning results array (DRF pagination), length:', response.data.results.length);
+        console.log('Results:', response.data.results);
         return response.data.results;
       } else if (response.data && response.data.data) {
+        console.log('Returning data array');
         return Array.isArray(response.data.data) ? response.data.data : [];
       }
       
+      console.log('No valid format found, returning empty array');
       return [];
     } catch (error: any) {
       console.error('Error fetching bookings:', error);

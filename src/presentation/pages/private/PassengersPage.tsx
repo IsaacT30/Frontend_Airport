@@ -38,10 +38,11 @@ export const PassengersPage = () => {
       console.log('Is array?', Array.isArray(data));
       console.log('Length:', data?.length);
       setPassengers(Array.isArray(data) ? data : []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load passengers:', err);
-      console.error('Error response:', err.response?.data);
-      const errorMessage = err.response?.data?.detail || err.message || 'Error al cargar pasajeros';
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.detail || error.message || 'Error al cargar pasajeros';
       setError(errorMessage);
       setPassengers([]);
     } finally {
@@ -68,28 +69,29 @@ export const PassengersPage = () => {
       setEditingPassenger(null);
       resetForm();
       loadPassengers();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating passenger:', err);
-      console.error('Error response:', err.response?.data);
+      const error = err as { response?: { data?: { detail?: string; message?: string; [key: string]: unknown } }; message?: string };
+      console.error('Error response:', error.response?.data);
       
       // Extraer mensaje de error más detallado
       let errorMsg = 'Error desconocido';
-      if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMsg = err.response.data;
-        } else if (err.response.data.detail) {
-          errorMsg = err.response.data.detail;
-        } else if (err.response.data.message) {
-          errorMsg = err.response.data.message;
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMsg = error.response.data.detail;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
         } else {
           // Mostrar errores de validación de campos
-          const errors = Object.entries(err.response.data)
+          const errors = Object.entries(error.response.data)
             .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
             .join('\n');
-          errorMsg = errors || err.message;
+          errorMsg = errors || error.message || 'Error desconocido';
         }
-      } else if (err.message) {
-        errorMsg = err.message;
+      } else if (error.message) {
+        errorMsg = error.message;
       }
       
       alert(`❌ Error al ${editingPassenger ? 'actualizar' : 'crear'} pasajero:\n${errorMsg}`);

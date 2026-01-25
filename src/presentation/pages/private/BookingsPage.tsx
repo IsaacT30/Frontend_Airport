@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { bookingService } from '../../../application/airport-api/booking.service';
 import { flightService } from '../../../application/airport-api/flight.service';
@@ -7,9 +8,12 @@ import { Booking, BookingCreate, Flight, Passenger } from '../../../domain/airpo
 import { useRole } from '../../../application/auth/useRole';
 
 export const BookingsPage = () => {
+  const location = useLocation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [saving, setSaving] = useState(false);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
@@ -23,14 +27,22 @@ export const BookingsPage = () => {
   const { canCreate, canDelete, role } = useRole();
 
   useEffect(() => {
-    loadBookings();
-    loadFlights();
-    loadPassengers();
-  }, []);
+    // Agregar un pequeño delay para asegurar que el backend procesó la reserva
+    const timer = setTimeout(() => {
+      loadBookings();
+      loadFlights();
+      loadPassengers();
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [location]);
 
   const loadBookings = async () => {
     try {
+      setLoading(true);
+      console.log('Cargando reservas...');
       const data = await bookingService.getAllBookings();
+      console.log('Reservas recibidas:', data);
       setBookings(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load bookings:', err);
@@ -73,10 +85,11 @@ export const BookingsPage = () => {
         status: 'pending',
       });
       loadBookings();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating booking:', err);
-      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
-      alert(`❌ Error al crear reserva: ${errorMsg}`);
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido';
+      alert('Error al crear reserva: ' + errorMsg);
     } finally {
       setSaving(false);
     }
@@ -94,6 +107,11 @@ export const BookingsPage = () => {
     }
   };
 
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowDetailModal(true);
+  };
+
   return (
     <PrivateLayout>
       <div>
@@ -102,14 +120,22 @@ export const BookingsPage = () => {
             <h1 className="text-3xl font-bold text-gray-900">🎫 Reservas</h1>
             <p className="text-sm text-gray-500 mt-1">Tu rol: {role}</p>
           </div>
-          {canCreate() && (
+          <div className="flex gap-3">
             <button 
-              onClick={() => setShowModal(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+              onClick={loadBookings}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
             >
-              + Nueva Reserva
+              🔄 Actualizar
             </button>
-          )}
+            {canCreate() && (
+              <button 
+                onClick={() => setShowModal(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+              >
+                + Nueva Reserva
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -132,7 +158,7 @@ export const BookingsPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {bookings.map((booking) => (
                   <tr key={booking.id}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">{booking.booking_reference}</td>
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">{booking.booking_code}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{booking.passenger_name || booking.passenger}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{new Date(booking.booking_date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -146,7 +172,12 @@ export const BookingsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">${booking.total_price}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
+                      <button 
+                        onClick={() => handleViewDetails(booking)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      >
+                        Vista
+                      </button>
                       {canDelete() && (
                         <button 
                           onClick={() => handleDelete(booking.id)}
@@ -242,6 +273,150 @@ export const BookingsPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Ver Detalles */}
+        {showDetailModal && selectedBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Detalles de la Reserva</h2>
+                  <button 
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-indigo-900 mb-3">Información de la Reserva</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Referencia</p>
+                      <p className="font-semibold text-gray-900">{selectedBooking.booking_reference}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Estado</p>
+                      <span className={`inline-block px-3 py-1 text-sm rounded-full font-semibold ${
+                        selectedBooking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        selectedBooking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                        selectedBooking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedBooking.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Fecha de Reserva</p>
+                      <p className="font-semibold text-gray-900">{new Date(selectedBooking.booking_date).toLocaleDateString('es-ES', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Asiento</p>
+                      <p className="font-semibold text-gray-900">{selectedBooking.seat_number || 'No asignado'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-3">Información del Pasajero</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-gray-600">Nombre</p>
+                      <p className="font-semibold text-gray-900">{selectedBooking.passenger_name || `ID: ${selectedBooking.passenger}`}</p>
+                    </div>
+                    {selectedBooking.passenger_details && (
+                      <>
+                        <div>
+                          <p className="text-sm text-gray-600">Email</p>
+                          <p className="font-semibold text-gray-900">{selectedBooking.passenger_details.email || 'No disponible'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Teléfono</p>
+                          <p className="font-semibold text-gray-900">{selectedBooking.passenger_details.phone || 'No disponible'}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-green-900 mb-3">Información del Vuelo</h3>
+                  {selectedBooking.flight_details ? (
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-sm text-gray-600">Número de Vuelo</p>
+                        <p className="font-semibold text-gray-900">{selectedBooking.flight_details.flight_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Ruta</p>
+                        <p className="font-semibold text-gray-900">
+                          {selectedBooking.flight_details.origin_airport_name || `Airport ${selectedBooking.flight_details.origin_airport}`} 
+                          {' → '}
+                          {selectedBooking.flight_details.destination_airport_name || `Airport ${selectedBooking.flight_details.destination_airport}`}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Salida</p>
+                          <p className="font-semibold text-gray-900">
+                            {new Date(selectedBooking.flight_details.departure_time).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Llegada</p>
+                          <p className="font-semibold text-gray-900">
+                            {new Date(selectedBooking.flight_details.arrival_time).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">Vuelo ID: {selectedBooking.flight}</p>
+                  )}
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-gray-900">Total Pagado</h3>
+                    <p className="text-3xl font-bold text-green-600">${selectedBooking.total_price}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

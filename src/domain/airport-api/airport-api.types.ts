@@ -81,7 +81,8 @@ export interface FlightCreate {
 // Tipos de Reserva
 export interface Booking {
   id: number;
-  booking_reference: string;
+  booking_reference?: string;
+  booking_code: string;
   flight: number;
   flight_details?: Flight;
   passenger: number;
