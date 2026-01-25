@@ -30,7 +30,7 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
   ];
 
   const navigation = role === 'CLIENTE' 
-    ? allNavigation.filter(item => ['Panel', 'Buscar Vuelos', 'Vuelos', 'Reservas'].includes(item.name))
+    ? allNavigation.filter(item => ['Panel', 'Vuelos', 'Reservas'].includes(item.name))
     : allNavigation;
 
   return (

@@ -57,6 +57,7 @@ export const Dashboard = () => {
       icon: '✈️',
       link: '/flights',
       color: 'bg-blue-500',
+      roles: ['ADMIN', 'EDITOR', 'OPERADOR', 'CLIENTE'],
     },
     {
       title: 'Reservas',
@@ -64,6 +65,7 @@ export const Dashboard = () => {
       icon: '🎫',
       link: '/bookings',
       color: 'bg-green-500',
+      roles: ['ADMIN', 'EDITOR', 'OPERADOR', 'CLIENTE'],
     },
     {
       title: 'Pasajeros',
@@ -71,6 +73,7 @@ export const Dashboard = () => {
       icon: '👤',
       link: '/passengers',
       color: 'bg-purple-500',
+      roles: ['ADMIN', 'EDITOR', 'OPERADOR'],
     },
     {
       title: 'Aerolíneas',
@@ -78,6 +81,7 @@ export const Dashboard = () => {
       icon: '🏢',
       link: '/airlines',
       color: 'bg-indigo-500',
+      roles: ['ADMIN', 'EDITOR'],
     },
     {
       title: 'Aeropuertos',
@@ -85,6 +89,7 @@ export const Dashboard = () => {
       icon: '🏛️',
       link: '/airports',
       color: 'bg-cyan-500',
+      roles: ['ADMIN', 'EDITOR'],
     },
     {
       title: 'Tripulación',
@@ -92,6 +97,7 @@ export const Dashboard = () => {
       icon: '👨‍✈️',
       link: '/crew',
       color: 'bg-orange-500',
+      roles: ['ADMIN', 'OPERADOR'],
     },
     {
       title: 'Mantenimiento',
@@ -99,8 +105,11 @@ export const Dashboard = () => {
       icon: '🔧',
       link: '/maintenance',
       color: 'bg-red-500',
+      roles: ['ADMIN', 'OPERADOR'],
     },
   ];
+
+  const visibleModules = modules.filter(m => role && m.roles.includes(role));
 
   return (
     <PrivateLayout>
@@ -190,7 +199,7 @@ export const Dashboard = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">System Modules</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {modules.map((module) => (
+            {visibleModules.map((module) => (
               <Link
                 key={module.title}
                 to={module.link}

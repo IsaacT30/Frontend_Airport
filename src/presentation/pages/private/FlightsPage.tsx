@@ -64,8 +64,15 @@ export const FlightsPage = () => {
   };
 
   const handleBook = async (flight: Flight) => {
+    if ((flight.available_seats || 0) <= 0) {
+      alert('⚠️ Lo sentimos, este vuelo no tiene asientos disponibles.');
+      return;
+    }
+
     if (!currentPassenger) {
-      alert('⚠️ No se encontró un perfil de pasajero asociado a tu cuenta. Contacta a soporte.');
+      // Si no hay pasajero, abrir modal para crear perfil y reservar
+      setSelectedFlight(flight);
+      setShowBookingModal(true);
       return;
     }
 
@@ -78,7 +85,7 @@ export const FlightsPage = () => {
       await bookingService.createBooking({
         flight: flight.id,
         passenger: currentPassenger.id,
-        seat_number: 'ANY', // Opcional o asignar uno
+        seat_number: 'ANY',
         total_price: flight.price || 0,
         status: 'pending'
       });
@@ -86,6 +93,7 @@ export const FlightsPage = () => {
       navigate('/bookings');
     } catch (err: unknown) {
       console.error('Error booking flight:', err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const error = err as { response?: { data?: { detail?: string } }; message?: string };
       const errorMsg = error.response?.data?.detail || error.message || 'Error al reservar';
       alert(`❌ Error al reservar: ${errorMsg}`);

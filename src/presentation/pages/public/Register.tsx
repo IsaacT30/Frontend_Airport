@@ -38,7 +38,7 @@ export const Register = () => {
 
     try {
       await register(formData);
-      navigate('/dashboard', { replace: true });
+      navigate('/user', { replace: true });
     } catch (err: any) {
       console.error('Error en registro:', err);
       console.error('Respuesta del servidor:', err.response);

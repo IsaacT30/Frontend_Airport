@@ -45,9 +45,14 @@ export const BookingsPage = () => {
   }, [passengers, user]);
 
   useEffect(() => {
-    if (!loading && (role !== 'CLIENTE' || currentPassenger)) {
-      loadBookings();
+    // Si es CLIENTE, esperar a tener el pasajero identificado
+    if (role === 'CLIENTE' && !currentPassenger) {
+      setLoading(false);
+      return;
     }
+    
+    // Si no es CLIENTE o ya tenemos el pasajero, cargar reservas
+    loadBookings();
   }, [currentPassenger, role, location]);
 
   const identifyCurrentPassenger = () => {
@@ -170,13 +175,23 @@ export const BookingsPage = () => {
       console.log('Procesando pago para reserva:', selectedBooking.id);
       console.log('Datos de pago:', paymentData);
       
-      // Actualizar el estado de la reserva a confirmed
-      await bookingService.updateBooking(selectedBooking.id, {
-        ...selectedBooking,
-        status: 'confirmed',
-      });
+      // Intentar usar confirmBooking primero
+      try {
+        await bookingService.confirmBooking(selectedBooking.id);
+      } catch (e) {
+        // Fallback si confirmBooking no está implementado o falla
+        console.warn('confirmBooking falló, intentando update manual', e);
+        const updateData: BookingCreate = {
+          flight: selectedBooking.flight,
+          passenger: selectedBooking.passenger,
+          seat_number: selectedBooking.seat_number,
+          total_price: selectedBooking.total_price,
+          status: 'confirmed'
+        };
+        await bookingService.updateBooking(selectedBooking.id, updateData);
+      }
       
-      alert('✅ Pago procesado exitosamente!\\n\\nTu reserva ha sido confirmada.');
+      alert('✅ Pago procesado exitosamente!\n\nTu reserva ha sido confirmada.');
       
       setShowPaymentModal(false);
       setSelectedBooking(null);
@@ -248,7 +263,7 @@ export const BookingsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">${booking.total_price}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                      {booking.status === 'pending' && role === 'CLIENTE' && (
+                      {(booking.status.toLowerCase() === 'pending') && role === 'CLIENTE' && (
                         <button
                           onClick={() => handlePay(booking)}
                           className="text-green-600 hover:text-green-900 font-bold"
