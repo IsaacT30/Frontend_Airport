@@ -197,7 +197,7 @@ export const BookingsPage = () => {
                       <option value={0}>Seleccione un pasajero</option>
                       {passengers.map(passenger => (
                         <option key={passenger.id} value={passenger.id}>
-                          {passenger.first_name} {passenger.last_name} - {passenger.passport_number}
+                          {passenger.first_name} {passenger.last_name} - {passenger.document_number}
                         </option>
                       ))}
                     </select>
