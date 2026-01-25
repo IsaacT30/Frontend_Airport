@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { flightService } from '../../../application/airport-api/flight.service';
 import { airlineService } from '../../../application/airport-api/airline.service';
 import { airportService } from '../../../application/airport-api/airport.service';
+import { passengerService } from '../../../application/airport-api/passenger.service';
+import { bookingService } from '../../../application/airport-api/booking.service';
 import { Flight, FlightCreate, Airline, Airport } from '../../../domain/airport-api/airport-api.types';
 import { useRole } from '../../../application/auth/useRole';
+import { useAuth } from '../../../application/auth/useAuth';
 
 export const FlightsPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [saving, setSaving] = useState(false);
@@ -204,6 +211,70 @@ export const FlightsPage = () => {
     }
   };
 
+  const handleViewFlight = (flight: Flight) => {
+    setSelectedFlight(flight);
+    setShowDetailModal(true);
+  };
+
+  const handleReserveFromDetails = () => {
+    setShowDetailModal(false);
+    setShowBookingModal(true);
+  };
+
+  const handleBookingSubmit = async (bookingData: { passenger_name: string; passenger_email: string; passenger_phone: string; seat_number: string }) => {
+    if (!selectedFlight) return;
+    
+    try {
+      console.log('Creando reserva pendiente...');
+      
+      // Buscar o crear pasajero
+      let passenger;
+      try {
+        const existingPassengers = await passengerService.getAllPassengers();
+        passenger = existingPassengers.find(p => p.user === user?.id);
+        
+        if (!passenger) {
+          const passengerData = {
+            user: user?.id,
+            first_name: bookingData.passenger_name.split(' ')[0],
+            last_name: bookingData.passenger_name.split(' ').slice(1).join(' ') || bookingData.passenger_name,
+            email: bookingData.passenger_email,
+            phone: bookingData.passenger_phone,
+            date_of_birth: '2000-01-01',
+            nationality: 'MX',
+            document_type: 'PASSPORT',
+            document_number: 'TEMP' + Date.now(),
+          };
+          passenger = await passengerService.createPassenger(passengerData);
+        }
+      } catch (error) {
+        console.error('Error al obtener/crear pasajero:', error);
+        throw error;
+      }
+      
+      // Crear reserva con estado pending
+      const reservaData = {
+        flight: selectedFlight.id,
+        passenger: passenger.id,
+        seat_number: bookingData.seat_number,
+        total_price: selectedFlight.price || 100,
+        status: 'pending',
+      };
+      
+      await bookingService.createBooking(reservaData);
+      
+      setShowBookingModal(false);
+      setSelectedFlight(null);
+      
+      alert('✅ Reserva creada exitosamente!\n\nPuedes verla en la sección de Reservas.\nRecuerda completar el pago para confirmarla.');
+      
+      navigate('/bookings');
+    } catch (error) {
+      console.error('Error al crear reserva:', error);
+      alert('❌ Error al crear la reserva. Por favor intenta de nuevo.');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       SCHEDULED: 'bg-blue-100 text-blue-800',
@@ -301,7 +372,7 @@ export const FlightsPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button 
-                          onClick={() => handleViewDetails(flight)}
+                          onClick={() => handleViewFlight(flight)}
                           className="text-indigo-600 hover:text-indigo-900 mr-3"
                         >
                           Ver
@@ -533,99 +604,198 @@ export const FlightsPage = () => {
 
         {/* Modal Detalles del Vuelo */}
         {showDetailModal && selectedFlight && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">✈️ Detalles del Vuelo</h2>
-                <button 
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Detalles del Vuelo</h2>
+                  <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 bg-indigo-50 p-4 rounded-lg">
-                  <h3 className="text-xl font-bold text-indigo-900">{selectedFlight.flight_number}</h3>
-                  <p className="text-sm text-indigo-600">
-                    {selectedFlight.airline_name || `Aerolínea ID: ${selectedFlight.airline}`}
-                  </p>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
-                  <p className="text-lg font-semibold">{selectedFlight.origin_airport_name || selectedFlight.origin_airport}</p>
-                </div>
+              <div className="p-6">
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                    <div className="text-center mb-4">
+                      <h3 className="text-3xl font-bold text-gray-900">{selectedFlight.flight_number}</h3>
+                      <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(selectedFlight.status)}`}>
+                        {selectedFlight.status}
+                      </span>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
-                  <p className="text-lg font-semibold">{selectedFlight.destination_airport_name || selectedFlight.destination_airport}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Salida</label>
-                  <p className="font-semibold">{new Date(selectedFlight.departure_time).toLocaleString()}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Llegada</label>
-                  <p className="font-semibold">{new Date(selectedFlight.arrival_time).toLocaleString()}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                  <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(selectedFlight.status)}`}>
-                    {selectedFlight.status}
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Aeronave</label>
-                  <p className="font-semibold">{(selectedFlight as any).aircraft_type || 'N/A'}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Asientos Totales</label>
-                  <p className="font-semibold">{selectedFlight.total_seats}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Asientos Disponibles</label>
-                  <p className="font-semibold text-green-600">{selectedFlight.available_seats}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Base</label>
-                  <p className="font-semibold text-lg">${(selectedFlight as any).base_price || selectedFlight.price}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Final</label>
-                  <p className="font-semibold text-lg">${selectedFlight.price}</p>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ocupación</label>
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div 
-                      className="bg-indigo-600 h-4 rounded-full transition-all"
-                      style={{ width: `${((selectedFlight.total_seats! - selectedFlight.available_seats!) / selectedFlight.total_seats!) * 100}%` }}
-                    ></div>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-gray-600 text-sm mb-1">Origen</p>
+                        <p className="font-bold text-lg">{selectedFlight.origin_airport_name || selectedFlight.origin_airport}</p>
+                        <p className="text-gray-700">{new Date(selectedFlight.departure_time).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600 text-sm mb-1">Destino</p>
+                        <p className="font-bold text-lg">{selectedFlight.destination_airport_name || selectedFlight.destination_airport}</p>
+                        <p className="text-gray-700">{new Date(selectedFlight.arrival_time).toLocaleString()}</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {selectedFlight.total_seats! - selectedFlight.available_seats!} de {selectedFlight.total_seats} asientos ocupados
-                  </p>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-600 text-sm mb-1">Asientos Disponibles</p>
+                      <p className="text-2xl font-bold text-gray-900">{selectedFlight.available_seats || 0}</p>
+                      <p className="text-gray-500 text-sm">de {selectedFlight.total_seats || 0} totales</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-gray-600 text-sm mb-1">Aerolínea</p>
+                      <p className="text-xl font-bold text-gray-900">{selectedFlight.airline_name || 'N/A'}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-gray-600 text-sm mb-1">Precio</p>
+                      <p className="text-3xl font-bold text-green-600">${selectedFlight.price || 0}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => setShowDetailModal(false)}
+                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold"
+                    >
+                      Cerrar
+                    </button>
+                    {role === 'CLIENTE' && selectedFlight.status === 'SCHEDULED' && (selectedFlight.available_seats || 0) > 0 && (
+                      <button
+                        onClick={handleReserveFromDetails}
+                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                      >
+                        Reservar Vuelo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Reserva */}
+        {showBookingModal && selectedFlight && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Reservar Vuelo</h2>
+                  <button onClick={() => setShowBookingModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-                >
-                  Cerrar
-                </button>
+              <div className="p-6">
+                <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                  <h3 className="font-semibold text-lg mb-2">Detalles del Vuelo</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Vuelo:</span>
+                      <span className="ml-2 font-semibold">{selectedFlight.flight_number}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Precio:</span>
+                      <span className="ml-2 font-semibold text-green-600">${selectedFlight.price || 0}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Origen:</span>
+                      <span className="ml-2 font-semibold">{selectedFlight.origin_airport_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Destino:</span>
+                      <span className="ml-2 font-semibold">{selectedFlight.destination_airport_name}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleBookingSubmit({
+                    passenger_name: formData.get('passenger_name') as string,
+                    passenger_email: formData.get('passenger_email') as string,
+                    passenger_phone: formData.get('passenger_phone') as string,
+                    seat_number: formData.get('seat_number') as string,
+                  });
+                }} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo *</label>
+                    <input
+                      type="text"
+                      name="passenger_name"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Juan Pérez"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <input
+                      type="email"
+                      name="passenger_email"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="juan@email.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono *</label>
+                    <input
+                      type="tel"
+                      name="passenger_phone"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="+52 123 456 7890"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Asiento *</label>
+                    <select
+                      name="seat_number"
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selecciona un asiento</option>
+                      {Array.from({length: 20}, (_, i) => i + 1).map(row => 
+                        ['A', 'B', 'C', 'D', 'E', 'F'].map(col => (
+                          <option key={`${row}${col}`} value={`${row}${col}`}>{row}{col}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                    ℹ️ Tu reserva quedará en estado PENDIENTE hasta que completes el pago en la sección de Reservas.
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowBookingModal(false)}
+                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                    >
+                      Crear Reserva
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
