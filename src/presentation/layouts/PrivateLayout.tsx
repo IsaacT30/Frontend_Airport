@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../application/auth/useAuth';
+import { useRole } from '../../application/auth/useRole';
 
 interface PrivateLayoutProps {
   children: ReactNode;
@@ -8,7 +9,7 @@ interface PrivateLayoutProps {
 
 export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { role } = useRole();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
@@ -16,7 +17,7 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
     navigate('/login');
   };
 
-  const navigation = [
+  const allNavigation = [
     { name: 'Panel', href: '/dashboard', icon: '📊' },
     { name: 'Buscar Vuelos', href: '/search-flights', icon: '🔍' },
     { name: 'Vuelos', href: '/flights', icon: '✈️' },
@@ -27,6 +28,10 @@ export const PrivateLayout = ({ children }: PrivateLayoutProps) => {
     { name: 'Tripulación', href: '/crew', icon: '👨‍✈️' },
     { name: 'Mantenimiento', href: '/maintenance', icon: '🔧' },
   ];
+
+  const navigation = role === 'CLIENTE' 
+    ? allNavigation.filter(item => ['Panel', 'Buscar Vuelos', 'Vuelos', 'Reservas'].includes(item.name))
+    : allNavigation;
 
   return (
     <div className="min-h-screen bg-gray-100">

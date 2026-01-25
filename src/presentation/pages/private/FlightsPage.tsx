@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { flightService } from '../../../application/airport-api/flight.service';
 import { airlineService } from '../../../application/airport-api/airline.service';
 import { airportService } from '../../../application/airport-api/airport.service';
-import { Flight, FlightCreate, Airline, Airport } from '../../../domain/airport-api/airport-api.types';
+import { bookingService } from '../../../application/airport-api/booking.service';
+import { passengerService } from '../../../application/airport-api/passenger.service';
+import { Flight, FlightCreate, Airline, Airport, Passenger } from '../../../domain/airport-api/airport-api.types';
 import { useRole } from '../../../application/auth/useRole';
+import { useAuth } from '../../../application/auth/useAuth';
 
 export const FlightsPage = () => {
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -17,6 +21,7 @@ export const FlightsPage = () => {
   const [saving, setSaving] = useState(false);
   const [airlines, setAirlines] = useState<Airline[]>([]);
   const [airports, setAirports] = useState<Airport[]>([]);
+  const [currentPassenger, setCurrentPassenger] = useState<Passenger | null>(null);
   const [formData, setFormData] = useState<FlightCreate>({
     flight_number: '',
     airline: 0,
@@ -32,12 +37,60 @@ export const FlightsPage = () => {
     base_price: 0,
   });
   const { canCreate, canEdit, canDelete, role } = useRole();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadFlights();
     loadAirlines();
     loadAirports();
-  }, []);
+    if (role === 'CLIENTE') {
+      loadCurrentPassenger();
+    }
+  }, [role, user]);
+
+  const loadCurrentPassenger = async () => {
+    if (!user) return;
+    try {
+      const passengers = await passengerService.getAllPassengers();
+      const found = passengers.find(p => p.user === Number(user.id) || p.email === user.email);
+      if (found) {
+        setCurrentPassenger(found);
+      }
+    } catch (err) {
+      console.error('Error identifying passenger:', err);
+    }
+  };
+
+  const handleBook = async (flight: Flight) => {
+    if (!currentPassenger) {
+      alert('⚠️ No se encontró un perfil de pasajero asociado a tu cuenta. Contacta a soporte.');
+      return;
+    }
+
+    if (!confirm(`¿Deseas reservar el vuelo ${flight.flight_number} por $${flight.price}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await bookingService.createBooking({
+        flight: flight.id,
+        passenger: currentPassenger.id,
+        seat_number: 'ANY', // Opcional o asignar uno
+        total_price: flight.price || 0,
+        status: 'pending'
+      });
+      alert('✅ ¡Vuelo reservado exitosamente! Redirigiendo a tus reservas...');
+      navigate('/bookings');
+    } catch (err: any) {
+      console.error('Error booking flight:', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Error al reservar';
+      alert(`❌ Error al reservar: ${errorMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadFlights = async () => {
     try {
@@ -300,6 +353,14 @@ export const FlightsPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {role === 'CLIENTE' && (
+                          <button
+                            onClick={() => handleBook(flight)}
+                            className="text-green-600 hover:text-green-900 mr-3 font-bold"
+                          >
+                            Reservar
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleViewDetails(flight)}
                           className="text-indigo-600 hover:text-indigo-900 mr-3"
