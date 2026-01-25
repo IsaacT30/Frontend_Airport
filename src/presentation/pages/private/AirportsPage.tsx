@@ -9,6 +9,8 @@ export const AirportsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingAirport, setViewingAirport] = useState<Airport | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AirportCreate>({
     name: '',
@@ -79,6 +81,11 @@ export const AirportsPage = () => {
     setFormData({ name: '', code: '', city: '', country: '', timezone: '' });
   };
 
+  const handleView = (airport: Airport) => {
+    setViewingAirport(airport);
+    setShowViewModal(true);
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm('¿Estás seguro de eliminar este aeropuerto?')) return;
     try {
@@ -137,11 +144,9 @@ export const AirportsPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     País
                   </th>
-                  {(canEdit() || canDelete()) && (
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  )}
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -159,26 +164,30 @@ export const AirportsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{airport.country}</div>
                     </td>
-                    {(canEdit() || canDelete()) && (
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {canEdit() && (
-                          <button 
-                            onClick={() => handleEdit(airport)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                          >
-                            Editar
-                          </button>
-                        )}
-                        {canDelete() && (
-                          <button 
-                            onClick={() => handleDelete(airport.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Eliminar
-                          </button>
-                        )}
-                      </td>
-                    )}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button 
+                        onClick={() => handleView(airport)}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        Ver
+                      </button>
+                      {canEdit() && (
+                        <button 
+                          onClick={() => handleEdit(airport)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {canDelete() && (
+                        <button 
+                          onClick={() => handleDelete(airport.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -265,6 +274,53 @@ export const AirportsPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal para ver detalles de aeropuerto */}
+        {showViewModal && viewingAirport && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-2xl w-full">
+              <h2 className="text-2xl font-bold mb-6">Detalles de Aeropuerto</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Nombre</label>
+                    <p className="text-lg font-semibold text-gray-900">{viewingAirport.name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Código IATA</label>
+                    <p className="text-lg font-semibold text-gray-900">{viewingAirport.code}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Ciudad</label>
+                    <p className="text-lg text-gray-900">{viewingAirport.city}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">País</label>
+                    <p className="text-lg text-gray-900">{viewingAirport.country}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Zona Horaria</label>
+                    <p className="text-lg text-gray-900">{viewingAirport.timezone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Fecha de Creación</label>
+                    <p className="text-lg text-gray-900">
+                      {viewingAirport.created_at ? new Date(viewingAirport.created_at).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         )}
