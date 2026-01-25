@@ -55,7 +55,7 @@ export interface Flight {
   destination_airport_details?: Airport;
   departure_time: string;
   arrival_time: string;
-  status: 'scheduled' | 'boarding' | 'departed' | 'arrived' | 'cancelled' | 'delayed';
+  status: 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_FLIGHT' | 'LANDED' | 'ARRIVED' | 'CANCELLED' | 'DELAYED';
   available_seats?: number;
   total_seats?: number;
   price?: number;
@@ -74,6 +74,8 @@ export interface FlightCreate {
   available_seats?: number;
   total_seats?: number;
   price?: number;
+  aircraft_type?: string;
+  base_price?: number;
 }
 
 // Tipos de Reserva
@@ -104,13 +106,24 @@ export interface BookingCreate {
 // Tipos de Pasajero
 export interface Passenger {
   id: number;
+  user?: number;
   first_name: string;
   last_name: string;
   email: string;
-  phone?: string;
-  passport_number: string;
-  nationality: string;
+  phone: string;
   date_of_birth: string;
+  nationality: string;
+  gender?: string;
+  document_type: 'PASSPORT' | 'ID_CARD' | 'DRIVER_LICENSE';
+  document_number: string;
+  document_expiry?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postal_code?: string;
+  frequent_flyer_number?: string;
+  special_needs?: string;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -119,10 +132,19 @@ export interface PassengerCreate {
   first_name: string;
   last_name: string;
   email: string;
-  phone?: string;
-  passport_number: string;
-  nationality: string;
+  phone: string;
   date_of_birth: string;
+  nationality: string;
+  document_type: string;
+  document_number: string;
+  gender?: string;
+  document_expiry?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postal_code?: string;
+  frequent_flyer_number?: string;
+  special_needs?: string;
 }
 
 // Tipos de Tripulación

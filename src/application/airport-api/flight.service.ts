@@ -47,11 +47,15 @@ export const flightService = {
 
   async updateFlight(id: number, flight: Partial<FlightCreate>): Promise<Flight> {
     try {
+      console.log('Update flight request:', id, flight);
       const response = await airportApiClient.put<Flight>(`/api/flights/${id}/`, flight);
+      console.log('Update flight response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error updating flight:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update flight');
+      console.error('Error response:', error.response);
+      // Propagar el error original para mejor manejo
+      throw error;
     }
   },
 

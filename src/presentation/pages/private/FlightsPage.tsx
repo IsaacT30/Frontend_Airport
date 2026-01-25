@@ -11,6 +11,7 @@ export const FlightsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [saving, setSaving] = useState(false);
   const [airlines, setAirlines] = useState<Airline[]>([]);
   const [airports, setAirports] = useState<Airport[]>([]);
@@ -21,10 +22,12 @@ export const FlightsPage = () => {
     destination_airport: 0,
     departure_time: '',
     arrival_time: '',
-    status: 'scheduled',
+    status: 'SCHEDULED',
     available_seats: 100,
     total_seats: 100,
     price: 0,
+    aircraft_type: '',
+    base_price: 0,
   });
   const { canCreate, canEdit, canDelete, role } = useRole();
 
@@ -72,29 +75,114 @@ export const FlightsPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await flightService.createFlight(formData);
-      alert('✅ Vuelo creado exitosamente!');
+      // Preparar datos con formato correcto de fechas
+      const flightData = {
+        ...formData,
+        departure_time: formData.departure_time.includes('T') 
+          ? new Date(formData.departure_time).toISOString() 
+          : formData.departure_time,
+        arrival_time: formData.arrival_time.includes('T') 
+          ? new Date(formData.arrival_time).toISOString() 
+          : formData.arrival_time,
+      };
+
+      if (editingFlight) {
+        // Editar vuelo existente
+        console.log('Updating flight:', editingFlight.id, flightData);
+        await flightService.updateFlight(editingFlight.id, flightData);
+        alert('✅ Vuelo actualizado exitosamente!');
+      } else {
+        // Crear nuevo vuelo
+        console.log('Creating flight:', flightData);
+        await flightService.createFlight(flightData);
+        alert('✅ Vuelo creado exitosamente!');
+      }
       setShowModal(false);
-      setFormData({
-        flight_number: '',
-        airline: 0,
-        origin_airport: 0,
-        destination_airport: 0,
-        departure_time: '',
-        arrival_time: '',
-        status: 'scheduled',
-        available_seats: 100,
-        total_seats: 100,
-        price: 0,
-      });
+      setEditingFlight(null);
+      resetForm();
       loadFlights();
     } catch (err: any) {
-      console.error('Error creating flight:', err);
-      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
-      alert(`❌ Error al crear vuelo: ${errorMsg}`);
+      console.error('Error saving flight:', err);
+      console.error('Response data:', err.response?.data);
+      
+      // Extraer mensaje de error más detallado
+      let errorMsg = 'Error desconocido';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data;
+        } else if (err.response.data.detail) {
+          errorMsg = err.response.data.detail;
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        } else {
+          // Mostrar errores de validación de campos
+          const errors = Object.entries(err.response.data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('\n');
+          errorMsg = errors || err.message;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      alert(`❌ Error al guardar vuelo:\n${errorMsg}`);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEdit = (flight: Flight) => {
+    setEditingFlight(flight);
+    
+    // Formatear fechas para datetime-local input
+    const formatForInput = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+    
+    setFormData({
+      flight_number: flight.flight_number,
+      airline: flight.airline,
+      origin_airport: flight.origin_airport,
+      destination_airport: flight.destination_airport,
+      departure_time: formatForInput(flight.departure_time),
+      arrival_time: formatForInput(flight.arrival_time),
+      status: flight.status,
+      available_seats: flight.available_seats || 100,
+      total_seats: flight.total_seats || 100,
+      price: flight.price || 0,
+      aircraft_type: (flight as any).aircraft_type || 'Boeing 737',
+      base_price: (flight as any).base_price || flight.price || 0,
+    });
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      flight_number: '',
+      airline: 0,
+      origin_airport: 0,
+      destination_airport: 0,
+      departure_time: '',
+      arrival_time: '',
+      status: 'SCHEDULED',
+      available_seats: 100,
+      total_seats: 100,
+      price: 0,
+      aircraft_type: '',
+      base_price: 0,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingFlight(null);
+    resetForm();
   };
 
   const handleDelete = async (id: number) => {
@@ -111,12 +199,14 @@ export const FlightsPage = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      boarding: 'bg-yellow-100 text-yellow-800',
-      departed: 'bg-green-100 text-green-800',
-      arrived: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-      delayed: 'bg-orange-100 text-orange-800',
+      SCHEDULED: 'bg-blue-100 text-blue-800',
+      BOARDING: 'bg-yellow-100 text-yellow-800',
+      DEPARTED: 'bg-indigo-100 text-indigo-800',
+      IN_FLIGHT: 'bg-purple-100 text-purple-800',
+      LANDED: 'bg-teal-100 text-teal-800',
+      ARRIVED: 'bg-green-100 text-green-800',
+      CANCELLED: 'bg-red-100 text-red-800',
+      DELAYED: 'bg-orange-100 text-orange-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -205,7 +295,12 @@ export const FlightsPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button className="text-indigo-600 hover:text-indigo-900 mr-3">Ver</button>
                         {canEdit() && (
-                          <button className="text-yellow-600 hover:text-yellow-900 mr-3">Editar</button>
+                          <button 
+                            onClick={() => handleEdit(flight)}
+                            className="text-yellow-600 hover:text-yellow-900 mr-3"
+                          >
+                            Editar
+                          </button>
                         )}
                         {canDelete() && (
                           <button 
@@ -224,11 +319,13 @@ export const FlightsPage = () => {
           </div>
         )}
 
-        {/* Modal Crear Vuelo */}
+        {/* Modal Crear/Editar Vuelo */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4">Agregar Nuevo Vuelo</h2>
+              <h2 className="text-2xl font-bold mb-4">
+                {editingFlight ? '✏️ Editar Vuelo' : '➕ Agregar Nuevo Vuelo'}
+              </h2>
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -311,18 +408,85 @@ export const FlightsPage = () => {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                    <select
+                      required
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="SCHEDULED">Programado</option>
+                      <option value="BOARDING">Abordando</option>
+                      <option value="DEPARTED">Despegado</option>
+                      <option value="IN_FLIGHT">En Vuelo</option>
+                      <option value="LANDED">Aterrizado</option>
+                      <option value="ARRIVED">Arribado</option>
+                      <option value="CANCELLED">Cancelado</option>
+                      <option value="DELAYED">Retrasado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Aeronave *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.aircraft_type}
+                      onChange={(e) => setFormData({...formData, aircraft_type: e.target.value})}
+                      placeholder="Boeing 737, Airbus A320..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Total de Asientos</label>
                     <input
                       type="number"
                       required
                       min="1"
                       value={formData.total_seats}
-                      onChange={(e) => setFormData({...formData, total_seats: Number(e.target.value), available_seats: Number(e.target.value)})}
+                      onChange={(e) => {
+                        const total = Number(e.target.value);
+                        setFormData({
+                          ...formData, 
+                          total_seats: total,
+                          available_seats: editingFlight ? formData.available_seats : total
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Precio ($)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Asientos Disponibles</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      max={formData.total_seats}
+                      value={formData.available_seats}
+                      onChange={(e) => setFormData({...formData, available_seats: Number(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Precio Base ($) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="0.01"
+                      value={formData.base_price}
+                      onChange={(e) => {
+                        const basePrice = Number(e.target.value);
+                        setFormData({
+                          ...formData, 
+                          base_price: basePrice,
+                          price: basePrice
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Precio Final ($)</label>
                     <input
                       type="number"
                       required
@@ -337,7 +501,7 @@ export const FlightsPage = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancelar
@@ -347,7 +511,7 @@ export const FlightsPage = () => {
                     disabled={saving}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {saving ? 'Guardando...' : 'Guardar Vuelo'}
+                    {saving ? 'Guardando...' : (editingFlight ? 'Actualizar Vuelo' : 'Guardar Vuelo')}
                   </button>
                 </div>
               </form>

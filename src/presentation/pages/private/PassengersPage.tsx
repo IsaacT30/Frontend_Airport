@@ -7,15 +7,17 @@ import { useRole } from '../../../application/auth/useRole';
 export const PassengersPage = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<PassengerCreate>({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
-    passport_number: '',
-    nationality: '',
     date_of_birth: '',
+    nationality: '',
+    document_type: 'PASSPORT',
+    document_number: '',
   });
   const [saving, setSaving] = useState(false);
   const { canCreate, canEdit, canDelete, role } = useRole();
@@ -27,11 +29,17 @@ export const PassengersPage = () => {
   const loadPassengers = async () => {
     try {
       setLoading(true);
+      setError('');
       const data = await passengerService.getAllPassengers();
       console.log('Passengers loaded:', data);
+      console.log('Is array?', Array.isArray(data));
+      console.log('Length:', data?.length);
       setPassengers(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load passengers:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.detail || err.message || 'Error al cargar pasajeros';
+      setError(errorMessage);
       setPassengers([]);
     } finally {
       setLoading(false);
@@ -42,6 +50,7 @@ export const PassengersPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
+      console.log('Creating passenger with data:', formData);
       await passengerService.createPassenger(formData);
       alert('✅ Pasajero creado exitosamente!');
       setShowModal(false);
@@ -50,15 +59,37 @@ export const PassengersPage = () => {
         last_name: '',
         email: '',
         phone: '',
-        passport_number: '',
-        nationality: '',
         date_of_birth: '',
+        nationality: '',
+        document_type: 'PASSPORT',
+        document_number: '',
       });
       loadPassengers();
     } catch (err: any) {
       console.error('Error creating passenger:', err);
-      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
-      alert(`❌ Error al crear pasajero: ${errorMsg}`);
+      console.error('Error response:', err.response?.data);
+      
+      // Extraer mensaje de error más detallado
+      let errorMsg = 'Error desconocido';
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data;
+        } else if (err.response.data.detail) {
+          errorMsg = err.response.data.detail;
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        } else {
+          // Mostrar errores de validación de campos
+          const errors = Object.entries(err.response.data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('\n');
+          errorMsg = errors || err.message;
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      alert(`❌ Error al crear pasajero:\n${errorMsg}`);
     } finally {
       setSaving(false);
     }
@@ -94,6 +125,13 @@ export const PassengersPage = () => {
           )}
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            <strong>Error:</strong> {error}
+            <div className="text-xs mt-2">Abre la consola del navegador (F12) para más detalles</div>
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
@@ -120,7 +158,7 @@ export const PassengersPage = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pasaporte</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nacionalidad</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F. Nacimiento</th>
                   {(canEdit() || canDelete()) && (
@@ -140,7 +178,8 @@ export const PassengersPage = () => {
                       <div className="text-sm text-gray-500">{passenger.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{passenger.passport_number}</div>
+                      <div className="text-sm text-gray-900">{passenger.document_number}</div>
+                      <div className="text-xs text-gray-500">{passenger.document_type}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{passenger.nationality}</div>
@@ -217,12 +256,26 @@ export const PassengersPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Pasaporte</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                    <select
+                      required
+                      value={formData.document_type}
+                      onChange={(e) => setFormData({...formData, document_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="PASSPORT">Pasaporte</option>
+                      <option value="ID_CARD">Cédula/DNI</option>
+                      <option value="DRIVER_LICENSE">Licencia de Conducir</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
                     <input
                       type="text"
                       required
-                      value={formData.passport_number}
-                      onChange={(e) => setFormData({...formData, passport_number: e.target.value})}
+                      value={formData.document_number}
+                      onChange={(e) => setFormData({...formData, document_number: e.target.value.toUpperCase()})}
+                      placeholder="ABC123456"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
