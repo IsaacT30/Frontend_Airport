@@ -7,15 +7,8 @@ export const UserDashboard = () => {
 
   const userModules = [
     {
-      title: 'Buscar Vuelos',
-      description: 'Encuentra y reserva tu próximo vuelo',
-      icon: '🔍',
-      link: '/search-flights',
-      color: 'bg-indigo-500',
-    },
-    {
       title: 'Mis Vuelos',
-      description: 'Ver vuelos disponibles y horarios',
+      description: 'Encuentra y reserva tu próximo vuelo',
       icon: '✈️',
       link: '/flights',
       color: 'bg-blue-500',
@@ -55,7 +48,7 @@ export const UserDashboard = () => {
             Como usuario puedes consultar vuelos, hacer reservas, realizar pagos y gestionar tus viajes.
           </p>
           <Link 
-            to="/search-flights"
+            to="/flights"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
           >
             ✈️ Reservar Vuelo Ahora

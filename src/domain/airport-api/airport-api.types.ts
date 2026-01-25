@@ -130,6 +130,7 @@ export interface Passenger {
 }
 
 export interface PassengerCreate {
+  user?: number;
   first_name: string;
   last_name: string;
   email: string;

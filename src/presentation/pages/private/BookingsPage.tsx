@@ -14,6 +14,7 @@ export const BookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [saving, setSaving] = useState(false);
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -110,17 +111,9 @@ export const BookingsPage = () => {
     }
   };
 
-  const handlePay = async (booking: Booking) => {
-    if (!confirm(`¿Confirmar pago de $${booking.total_price} para la reserva ${booking.booking_code}?`)) return;
-    
-    try {
-      await bookingService.confirmBooking(booking.id);
-      alert('✅ ¡Pago realizado con éxito! Reserva confirmada.');
-      loadBookings();
-    } catch (err) {
-      console.error('Error paying booking:', err);
-      alert('❌ Error al procesar el pago');
-    }
+  const handlePay = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowPaymentModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,6 +161,30 @@ export const BookingsPage = () => {
   const handleViewDetails = (booking: Booking) => {
     setSelectedBooking(booking);
     setShowDetailModal(true);
+  };
+
+  const handlePaymentConfirm = async (paymentData: { cardNumber: string; cardName: string; expiryDate: string; cvv: string }) => {
+    if (!selectedBooking) return;
+    
+    try {
+      console.log('Procesando pago para reserva:', selectedBooking.id);
+      console.log('Datos de pago:', paymentData);
+      
+      // Actualizar el estado de la reserva a confirmed
+      await bookingService.updateBooking(selectedBooking.id, {
+        ...selectedBooking,
+        status: 'confirmed',
+      });
+      
+      alert('✅ Pago procesado exitosamente!\\n\\nTu reserva ha sido confirmada.');
+      
+      setShowPaymentModal(false);
+      setSelectedBooking(null);
+      loadBookings();
+    } catch (error) {
+      console.error('Error al procesar pago:', error);
+      alert('❌ Error al procesar el pago. Por favor intenta de nuevo.');
+    }
   };
 
   return (
@@ -220,36 +237,37 @@ export const BookingsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">{booking.passenger_name || booking.passenger}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{new Date(booking.booking_date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                      <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
                         booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                         booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {booking.status}
+                        {booking.status === 'pending' ? 'PENDIENTE' : booking.status.toUpperCase()}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">${booking.total_price}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                       {booking.status === 'pending' && role === 'CLIENTE' && (
                         <button
                           onClick={() => handlePay(booking)}
-                          className="text-green-600 hover:text-green-900 mr-3 font-bold"
+                          className="text-green-600 hover:text-green-900 font-bold"
                         >
                           💳 Pagar
                         </button>
                       )}
                       <button 
                         onClick={() => handleViewDetails(booking)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
-                        Vista
+                        👁️ Ver
                       </button>
                       {(canDelete() || (role === 'CLIENTE' && booking.status === 'pending')) && (
                         <button 
                           onClick={() => handleDelete(booking.id)}
                           className="text-red-600 hover:text-red-900"
                         >
-                          Cancel
+                          ❌ Cancelar
                         </button>
                       )}
                     </td>
@@ -483,6 +501,108 @@ export const BookingsPage = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Pago */}
+        {showPaymentModal && selectedBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">💳 Pagar Reserva</h2>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-gray-600">Reserva</p>
+                <p className="font-bold text-lg">{selectedBooking.booking_code}</p>
+                <p className="text-2xl font-bold text-green-600 mt-2">${selectedBooking.total_price}</p>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handlePaymentConfirm({
+                  cardNumber: formData.get('cardNumber') as string,
+                  cardName: formData.get('cardName') as string,
+                  expiryDate: formData.get('expiryDate') as string,
+                  cvv: formData.get('cvv') as string,
+                });
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Número de Tarjeta *</label>
+                  <input
+                    type="text"
+                    name="cardNumber"
+                    required
+                    placeholder="1234 5678 9012 3456"
+                    maxLength={16}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nombre en la Tarjeta *</label>
+                  <input
+                    type="text"
+                    name="cardName"
+                    required
+                    placeholder="NOMBRE APELLIDO"
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Vencimiento *</label>
+                    <input
+                      type="text"
+                      name="expiryDate"
+                      required
+                      placeholder="MM/AA"
+                      maxLength={5}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">CVV *</label>
+                    <input
+                      type="text"
+                      name="cvv"
+                      required
+                      placeholder="123"
+                      maxLength={3}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                  🔒 Esta es una simulación de pago para fines educativos.
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                  >
+                    💳 Pagar ${selectedBooking.total_price}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
