@@ -11,6 +11,8 @@ export const FlightsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [saving, setSaving] = useState(false);
   const [airlines, setAirlines] = useState<Airline[]>([]);
@@ -129,6 +131,11 @@ export const FlightsPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleViewDetails = (flight: Flight) => {
+    setSelectedFlight(flight);
+    setShowDetailModal(true);
   };
 
   const handleEdit = (flight: Flight) => {
@@ -293,7 +300,12 @@ export const FlightsPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">Ver</button>
+                        <button 
+                          onClick={() => handleViewDetails(flight)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        >
+                          Ver
+                        </button>
                         {canEdit() && (
                           <button 
                             onClick={() => handleEdit(flight)}
@@ -515,6 +527,106 @@ export const FlightsPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Detalles del Vuelo */}
+        {showDetailModal && selectedFlight && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">✈️ Detalles del Vuelo</h2>
+                <button 
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="text-xl font-bold text-indigo-900">{selectedFlight.flight_number}</h3>
+                  <p className="text-sm text-indigo-600">
+                    {selectedFlight.airline_name || `Aerolínea ID: ${selectedFlight.airline}`}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
+                  <p className="text-lg font-semibold">{selectedFlight.origin_airport_name || selectedFlight.origin_airport}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+                  <p className="text-lg font-semibold">{selectedFlight.destination_airport_name || selectedFlight.destination_airport}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salida</label>
+                  <p className="font-semibold">{new Date(selectedFlight.departure_time).toLocaleString()}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Llegada</label>
+                  <p className="font-semibold">{new Date(selectedFlight.arrival_time).toLocaleString()}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                  <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(selectedFlight.status)}`}>
+                    {selectedFlight.status}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Aeronave</label>
+                  <p className="font-semibold">{(selectedFlight as any).aircraft_type || 'N/A'}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Asientos Totales</label>
+                  <p className="font-semibold">{selectedFlight.total_seats}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Asientos Disponibles</label>
+                  <p className="font-semibold text-green-600">{selectedFlight.available_seats}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Base</label>
+                  <p className="font-semibold text-lg">${(selectedFlight as any).base_price || selectedFlight.price}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Final</label>
+                  <p className="font-semibold text-lg">${selectedFlight.price}</p>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ocupación</label>
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div 
+                      className="bg-indigo-600 h-4 rounded-full transition-all"
+                      style={{ width: `${((selectedFlight.total_seats! - selectedFlight.available_seats!) / selectedFlight.total_seats!) * 100}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedFlight.total_seats! - selectedFlight.available_seats!} de {selectedFlight.total_seats} asientos ocupados
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         )}

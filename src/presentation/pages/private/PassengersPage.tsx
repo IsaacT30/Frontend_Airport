@@ -9,6 +9,9 @@ export const PassengersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null);
+  const [editingPassenger, setEditingPassenger] = useState<Passenger | null>(null);
   const [formData, setFormData] = useState<PassengerCreate>({
     first_name: '',
     last_name: '',
@@ -50,20 +53,20 @@ export const PassengersPage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      console.log('Creating passenger with data:', formData);
-      await passengerService.createPassenger(formData);
-      alert('✅ Pasajero creado exitosamente!');
+      if (editingPassenger) {
+        // Editar pasajero existente
+        console.log('Updating passenger:', editingPassenger.id, formData);
+        await passengerService.updatePassenger(editingPassenger.id, formData);
+        alert('✅ Pasajero actualizado exitosamente!');
+      } else {
+        // Crear nuevo pasajero
+        console.log('Creating passenger with data:', formData);
+        await passengerService.createPassenger(formData);
+        alert('✅ Pasajero creado exitosamente!');
+      }
       setShowModal(false);
-      setFormData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        date_of_birth: '',
-        nationality: '',
-        document_type: 'PASSPORT',
-        document_number: '',
-      });
+      setEditingPassenger(null);
+      resetForm();
       loadPassengers();
     } catch (err: any) {
       console.error('Error creating passenger:', err);
@@ -89,10 +92,60 @@ export const PassengersPage = () => {
         errorMsg = err.message;
       }
       
-      alert(`❌ Error al crear pasajero:\n${errorMsg}`);
+      alert(`❌ Error al ${editingPassenger ? 'actualizar' : 'crear'} pasajero:\n${errorMsg}`);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleViewDetails = (passenger: Passenger) => {
+    setSelectedPassenger(passenger);
+    setShowDetailModal(true);
+  };
+
+  const handleEdit = (passenger: Passenger) => {
+    setEditingPassenger(passenger);
+    
+    // Formatear fecha para input tipo date (YYYY-MM-DD)
+    const formatDateForInput = (dateStr: string) => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    setFormData({
+      first_name: passenger.first_name,
+      last_name: passenger.last_name,
+      email: passenger.email,
+      phone: passenger.phone,
+      date_of_birth: formatDateForInput(passenger.date_of_birth),
+      nationality: passenger.nationality,
+      document_type: passenger.document_type,
+      document_number: passenger.document_number,
+    });
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      date_of_birth: '',
+      nationality: '',
+      document_type: 'PASSPORT',
+      document_number: '',
+    });
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingPassenger(null);
+    resetForm();
   };
 
   const handleDelete = async (id: number) => {
@@ -189,8 +242,19 @@ export const PassengersPage = () => {
                     </td>
                     {(canEdit() || canDelete()) && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button 
+                          onClick={() => handleViewDetails(passenger)}
+                          className="text-blue-600 hover:text-blue-900 mr-4"
+                        >
+                          Ver
+                        </button>
                         {canEdit() && (
-                          <button className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
+                          <button 
+                            onClick={() => handleEdit(passenger)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
+                            Editar
+                          </button>
                         )}
                         {canDelete() && (
                           <button 
@@ -209,11 +273,13 @@ export const PassengersPage = () => {
           </div>
         )}
 
-        {/* Modal para crear pasajero */}
+        {/* Modal para crear/editar pasajero */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-6">Agregar Pasajero</h2>
+              <h2 className="text-2xl font-bold mb-6">
+                {editingPassenger ? '✏️ Editar Pasajero' : '➕ Agregar Pasajero'}
+              </h2>
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -303,7 +369,7 @@ export const PassengersPage = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={handleCloseModal}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancelar
@@ -313,10 +379,124 @@ export const PassengersPage = () => {
                     disabled={saving}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    {saving ? 'Guardando...' : 'Guardar'}
+                    {saving ? 'Guardando...' : (editingPassenger ? 'Actualizar Pasajero' : 'Guardar Pasajero')}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Detalles del Pasajero */}
+        {showDetailModal && selectedPassenger && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">👤 Detalles del Pasajero</h2>
+                <button 
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="text-xl font-bold text-indigo-900">
+                    {selectedPassenger.first_name} {selectedPassenger.last_name}
+                  </h3>
+                  <p className="text-sm text-indigo-600">{selectedPassenger.email}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
+                  <p className="text-lg font-semibold">
+                    {selectedPassenger.document_type === 'PASSPORT' ? 'Pasaporte' : 
+                     selectedPassenger.document_type === 'ID_CARD' ? 'Cédula/DNI' : 
+                     'Licencia de Conducir'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
+                  <p className="text-lg font-semibold">{selectedPassenger.document_number}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nacionalidad</label>
+                  <p className="font-semibold">{selectedPassenger.nationality}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                  <p className="font-semibold">{new Date(selectedPassenger.date_of_birth).toLocaleDateString()}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <p className="font-semibold">{selectedPassenger.phone}</p>
+                </div>
+
+                {selectedPassenger.gender && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
+                    <p className="font-semibold">
+                      {selectedPassenger.gender === 'M' ? 'Masculino' : 
+                       selectedPassenger.gender === 'F' ? 'Femenino' : 'Otro'}
+                    </p>
+                  </div>
+                )}
+
+                {selectedPassenger.address && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                    <p className="font-semibold">{selectedPassenger.address}</p>
+                  </div>
+                )}
+
+                {(selectedPassenger.city || selectedPassenger.country) && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+                    <p className="font-semibold">
+                      {selectedPassenger.city}{selectedPassenger.city && selectedPassenger.country ? ', ' : ''}
+                      {selectedPassenger.country}
+                    </p>
+                  </div>
+                )}
+
+                {selectedPassenger.frequent_flyer_number && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Viajero Frecuente</label>
+                    <p className="font-semibold">{selectedPassenger.frequent_flyer_number}</p>
+                  </div>
+                )}
+
+                {selectedPassenger.special_needs && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Necesidades Especiales</label>
+                    <p className="font-semibold text-orange-600">{selectedPassenger.special_needs}</p>
+                  </div>
+                )}
+
+                <div className="col-span-2 pt-2 border-t">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                  <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${
+                    selectedPassenger.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedPassenger.is_active ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         )}

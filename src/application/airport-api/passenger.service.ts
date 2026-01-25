@@ -85,11 +85,16 @@ export const passengerService = {
 
   async updatePassenger(id: number, passenger: Partial<PassengerCreate>): Promise<Passenger> {
     try {
+      console.log('Updating passenger:', id, passenger);
       const response = await airportApiClient.put<Passenger>(`/api/passengers/passengers/${id}/`, passenger);
+      console.log('Update passenger response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error updating passenger:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update passenger');
+      console.error('Error response:', error.response);
+      console.error('Status:', error.response?.status);
+      console.error('Data:', error.response?.data);
+      throw error;
     }
   },
 
