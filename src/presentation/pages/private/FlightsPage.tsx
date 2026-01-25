@@ -18,7 +18,6 @@ export const FlightsPage = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<Flight | null>(null);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +53,7 @@ export const FlightsPage = () => {
     if (!user) return;
     try {
       const passengers = await passengerService.getAllPassengers();
-      const found = passengers.find(p => p.user === Number(user.id) || p.email === user.email);
+      const found = passengers.find((p: Passenger) => p.user === Number(user.id) || p.email === user.email);
       if (found) {
         setCurrentPassenger(found);
       }
@@ -269,64 +268,7 @@ export const FlightsPage = () => {
     setShowDetailModal(true);
   };
 
-  const handleReserveFromDetails = () => {
-    setShowDetailModal(false);
-    setShowBookingModal(true);
-  };
 
-  const handleBookingSubmit = async (bookingData: { passenger_name: string; passenger_email: string; passenger_phone: string; seat_number: string }) => {
-    if (!selectedFlight) return;
-    
-    try {
-      console.log('Creando reserva pendiente...');
-      
-      // Buscar o crear pasajero
-      let passenger;
-      try {
-        const existingPassengers = await passengerService.getAllPassengers();
-        passenger = existingPassengers.find(p => p.user === user?.id);
-        
-        if (!passenger) {
-          const passengerData = {
-            user: user?.id,
-            first_name: bookingData.passenger_name.split(' ')[0],
-            last_name: bookingData.passenger_name.split(' ').slice(1).join(' ') || bookingData.passenger_name,
-            email: bookingData.passenger_email,
-            phone: bookingData.passenger_phone,
-            date_of_birth: '2000-01-01',
-            nationality: 'MX',
-            document_type: 'PASSPORT',
-            document_number: 'TEMP' + Date.now(),
-          };
-          passenger = await passengerService.createPassenger(passengerData);
-        }
-      } catch (error) {
-        console.error('Error al obtener/crear pasajero:', error);
-        throw error;
-      }
-      
-      // Crear reserva con estado pending
-      const reservaData = {
-        flight: selectedFlight.id,
-        passenger: passenger.id,
-        seat_number: bookingData.seat_number,
-        total_price: selectedFlight.price || 100,
-        status: 'pending',
-      };
-      
-      await bookingService.createBooking(reservaData);
-      
-      setShowBookingModal(false);
-      setSelectedFlight(null);
-      
-      alert('✅ Reserva creada exitosamente!\n\nPuedes verla en la sección de Reservas.\nRecuerda completar el pago para confirmarla.');
-      
-      navigate('/bookings');
-    } catch (error) {
-      console.error('Error al crear reserva:', error);
-      alert('❌ Error al crear la reserva. Por favor intenta de nuevo.');
-    }
-  };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -721,18 +663,10 @@ export const FlightsPage = () => {
                   <div className="flex gap-3 pt-4">
                     <button
                       onClick={() => setShowDetailModal(false)}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold"
+                      className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold"
                     >
                       Cerrar
                     </button>
-                    {role === 'CLIENTE' && selectedFlight.status === 'SCHEDULED' && (selectedFlight.available_seats || 0) > 0 && (
-                      <button
-                        onClick={handleReserveFromDetails}
-                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                      >
-                        Reservar Vuelo
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -740,127 +674,7 @@ export const FlightsPage = () => {
           </div>
         )}
 
-        {/* Modal de Reserva */}
-        {showBookingModal && selectedFlight && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-gray-900">Reservar Vuelo</h2>
-                  <button onClick={() => setShowBookingModal(false)} className="text-gray-400 hover:text-gray-600">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
-              <div className="p-6">
-                <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-semibold text-lg mb-2">Detalles del Vuelo</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Vuelo:</span>
-                      <span className="ml-2 font-semibold">{selectedFlight.flight_number}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Precio:</span>
-                      <span className="ml-2 font-semibold text-green-600">${selectedFlight.price || 0}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Origen:</span>
-                      <span className="ml-2 font-semibold">{selectedFlight.origin_airport_name}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Destino:</span>
-                      <span className="ml-2 font-semibold">{selectedFlight.destination_airport_name}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  handleBookingSubmit({
-                    passenger_name: formData.get('passenger_name') as string,
-                    passenger_email: formData.get('passenger_email') as string,
-                    passenger_phone: formData.get('passenger_phone') as string,
-                    seat_number: formData.get('seat_number') as string,
-                  });
-                }} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo *</label>
-                    <input
-                      type="text"
-                      name="passenger_name"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Juan Pérez"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                    <input
-                      type="email"
-                      name="passenger_email"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="juan@email.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono *</label>
-                    <input
-                      type="tel"
-                      name="passenger_phone"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="+52 123 456 7890"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Asiento *</label>
-                    <select
-                      name="seat_number"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecciona un asiento</option>
-                      {Array.from({length: 20}, (_, i) => i + 1).map(row => 
-                        ['A', 'B', 'C', 'D', 'E', 'F'].map(col => (
-                          <option key={`${row}${col}`} value={`${row}${col}`}>{row}{col}</option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                    ℹ️ Tu reserva quedará en estado PENDIENTE hasta que completes el pago en la sección de Reservas.
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowBookingModal(false)}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                    >
-                      Crear Reserva
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </PrivateLayout>
   );

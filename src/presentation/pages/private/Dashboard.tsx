@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { PrivateLayout } from '../../layouts/PrivateLayout';
 import { useAuth } from '../../../application/auth/useAuth';
 import { useRole } from '../../../application/auth/useRole';
@@ -12,6 +12,12 @@ import { airportService } from '../../../application/airport-api/airport.service
 export const Dashboard = () => {
   const { user } = useAuth();
   const { role, isAdmin, isEditor, isOperador } = useRole();
+  
+  // Si es cliente, redirigir al UserDashboard
+  if (role === 'CLIENTE') {
+    return <Navigate to="/user" replace />;
+  }
+  
   const [stats, setStats] = useState({
     flights: 0,
     bookings: 0,

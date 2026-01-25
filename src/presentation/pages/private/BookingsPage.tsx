@@ -39,21 +39,20 @@ export const BookingsPage = () => {
   }, []);
 
   useEffect(() => {
-    if (passengers.length > 0) {
+    if (passengers.length > 0 && user) {
       identifyCurrentPassenger();
     }
-  }, [passengers, user]);
+  }, [passengers, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    // Si es CLIENTE, esperar a tener el pasajero identificado
-    if (role === 'CLIENTE' && !currentPassenger) {
-      setLoading(false);
-      return;
+    // Para ADMIN/EDITOR/OPERADOR: cargar inmediatamente
+    // Para CLIENTE: esperar a que se identifique el pasajero
+    if (role !== 'CLIENTE') {
+      loadBookings();
+    } else if (currentPassenger) {
+      loadBookings();
     }
-    
-    // Si no es CLIENTE o ya tenemos el pasajero, cargar reservas
-    loadBookings();
-  }, [currentPassenger, role, location]);
+  }, [currentPassenger, role, location]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const identifyCurrentPassenger = () => {
     if (!user) return;
@@ -67,20 +66,20 @@ export const BookingsPage = () => {
   const loadBookings = async () => {
     try {
       setLoading(true);
-      const params: any = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const params: Record<string, any> = {};
       
       // Si es cliente, filtrar por su ID de pasajero
       if (role === 'CLIENTE') {
-        if (currentPassenger) {
-          params.passenger = currentPassenger.id;
-        } else {
+        if (!currentPassenger) {
           // Si no se encuentra el pasajero, no cargar nada aún
           setLoading(false);
+          setBookings([]);
           return;
         }
+        params.passenger = currentPassenger.id;
       }
 
-      console.log('Cargando reservas con params:', params);
       const data = await bookingService.getAllBookings(params);
       
       // Filtrado adicional en el cliente si la API no filtra
