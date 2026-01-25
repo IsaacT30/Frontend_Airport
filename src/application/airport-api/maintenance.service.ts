@@ -4,27 +4,46 @@ import { MaintenanceRecord, MaintenanceRecordCreate } from '../../domain/airport
 export const maintenanceService = {
   async getAllMaintenanceRecords(params?: { status?: string; aircraft_id?: string }): Promise<MaintenanceRecord[]> {
     try {
-      const response = await airportApiClient.get<any>('/api/maintenance/', { params });
-      console.log('Maintenance response:', response.data);
+      console.log('🔍 Fetching maintenance records from API...');
+      const response = await airportApiClient.get<any>('/api/maintenance/records/', { params });
+      console.log('✅ Maintenance API Response:', response);
+      console.log('📦 Maintenance Data:', response.data);
+      console.log('📊 Data type:', typeof response.data);
+      console.log('📊 Is Array:', Array.isArray(response.data));
+      console.log('📊 Object keys:', response.data ? Object.keys(response.data) : 'null');
       
       if (Array.isArray(response.data)) {
+        console.log('✅ Returning array directly:', response.data.length, 'items');
         return response.data;
       } else if (response.data && Array.isArray(response.data.results)) {
+        console.log('✅ Returning results array:', response.data.results.length, 'items');
         return response.data.results;
       } else if (response.data && response.data.data) {
+        console.log('✅ Returning data.data:', response.data.data);
         return Array.isArray(response.data.data) ? response.data.data : [];
+      } else if (response.data && typeof response.data === 'object') {
+        // Buscar cualquier propiedad que sea un array
+        for (const key in response.data) {
+          if (Array.isArray(response.data[key])) {
+            console.log(`✅ Found array in property "${key}":`, response.data[key].length, 'items');
+            return response.data[key];
+          }
+        }
       }
       
+      console.warn('⚠️ No valid data structure found, returning empty array');
+      console.warn('Full response data:', JSON.stringify(response.data));
       return [];
     } catch (error: any) {
-      console.error('Error fetching maintenance records:', error);
+      console.error('❌ Error fetching maintenance records:', error);
+      console.error('❌ Error response:', error.response);
       throw new Error(error.response?.data?.message || 'Failed to fetch maintenance records');
     }
   },
 
   async getMaintenanceRecordById(id: number): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.get<MaintenanceRecord>(`/api/maintenance/${id}/`);
+      const response = await airportApiClient.get<MaintenanceRecord>(`/api/maintenance/records/${id}/`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching maintenance record:', error);
@@ -34,7 +53,7 @@ export const maintenanceService = {
 
   async getMaintenanceByAircraft(aircraftId: string): Promise<MaintenanceRecord[]> {
     try {
-      const response = await airportApiClient.get<MaintenanceRecord[]>('/api/maintenance/', {
+      const response = await airportApiClient.get<MaintenanceRecord[]>('/api/maintenance/records/', {
         params: { aircraft_id: aircraftId },
       });
       return response.data;
@@ -46,7 +65,7 @@ export const maintenanceService = {
 
   async createMaintenanceRecord(record: MaintenanceRecordCreate): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.post<MaintenanceRecord>('/api/maintenance/', record);
+      const response = await airportApiClient.post<MaintenanceRecord>('/api/maintenance/records/', record);
       return response.data;
     } catch (error: any) {
       console.error('Error creating maintenance record:', error);
@@ -56,7 +75,7 @@ export const maintenanceService = {
 
   async updateMaintenanceRecord(id: number, record: Partial<MaintenanceRecordCreate>): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.put<MaintenanceRecord>(`/api/maintenance/${id}/`, record);
+      const response = await airportApiClient.put<MaintenanceRecord>(`/api/maintenance/records/${id}/`, record);
       return response.data;
     } catch (error: any) {
       console.error('Error updating maintenance record:', error);
@@ -66,7 +85,7 @@ export const maintenanceService = {
 
   async patchMaintenanceRecord(id: number, record: Partial<MaintenanceRecordCreate>): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.patch<MaintenanceRecord>(`/api/maintenance/${id}/`, record);
+      const response = await airportApiClient.patch<MaintenanceRecord>(`/api/maintenance/records/${id}/`, record);
       return response.data;
     } catch (error: any) {
       console.error('Error patching maintenance record:', error);
@@ -76,7 +95,7 @@ export const maintenanceService = {
 
   async completeMaintenanceRecord(id: number): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.post<MaintenanceRecord>(`/api/maintenance/${id}/complete/`, {});
+      const response = await airportApiClient.post<MaintenanceRecord>(`/api/maintenance/records/${id}/complete/`, {});
       return response.data;
     } catch (error: any) {
       console.error('Error completing maintenance record:', error);
@@ -86,7 +105,7 @@ export const maintenanceService = {
 
   async cancelMaintenanceRecord(id: number): Promise<MaintenanceRecord> {
     try {
-      const response = await airportApiClient.post<MaintenanceRecord>(`/api/maintenance/${id}/cancel/`, {});
+      const response = await airportApiClient.post<MaintenanceRecord>(`/api/maintenance/records/${id}/cancel/`, {});
       return response.data;
     } catch (error: any) {
       console.error('Error cancelling maintenance record:', error);
@@ -96,7 +115,7 @@ export const maintenanceService = {
 
   async deleteMaintenanceRecord(id: number): Promise<void> {
     try {
-      await airportApiClient.delete(`/api/maintenance/${id}/`);
+      await airportApiClient.delete(`/api/maintenance/records/${id}/`);
     } catch (error: any) {
       console.error('Error deleting maintenance record:', error);
       throw new Error(error.response?.data?.message || 'Failed to delete maintenance record');

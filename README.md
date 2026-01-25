@@ -29,16 +29,24 @@ El sistema implementa 4 niveles de roles con permisos diferenciados:
 
 ### Módulos Implementados
 
-#### Módulos con CRUD Completo
-1. **Pasajeros** - Gestión de información de pasajeros
-2. **Aeropuertos** - Administración de aeropuertos (código IATA, ciudad, país)
-3. **Aerolíneas** - Gestión de aerolíneas (código IATA, contacto)
+#### Módulos con CRUD Completo ✅
+1. **Pasajeros** - Gestión completa de información de pasajeros
+2. **Aeropuertos** - Administración de aeropuertos (código IATA, ciudad, país, zona horaria)
+3. **Aerolíneas** - Gestión de aerolíneas (código IATA, país, contacto)
+4. **Tripulación** - Administración de personal de vuelo (pilotos, copilotos, auxiliares, ingenieros)
+5. **Mantenimiento** - Control de mantenimiento de aeronaves (rutinario, inspección, reparación, revisión mayor)
 
 #### Módulos con Visualización
-4. **Vuelos** - Listado de vuelos con origen/destino
-5. **Reservas** - Gestión de bookings
-6. **Tripulación** - Administración de personal de vuelo
-7. **Mantenimiento** - Control de mantenimiento de aeronaves
+6. **Vuelos** - Listado de vuelos con origen/destino
+7. **Reservas** - Gestión de bookings
+
+#### Funcionalidades de los Módulos CRUD
+Todos los módulos con CRUD completo incluyen:
+- ✅ **Botón "Ver"**: Modal de visualización de detalles completos
+- ✅ **Botón "Editar"**: Modificación de registros existentes
+- ✅ **Botón "Eliminar"**: Eliminación con confirmación
+- ✅ **Botón "Crear"**: Formularios modales con validación
+- ✅ **Control por Roles**: Los botones se muestran según permisos del usuario
 
 #### Módulos No Disponibles (Backend)
 - Catálogo, Facturas, Almacenes, Usuarios (endpoints no desplegados)
@@ -150,14 +158,16 @@ Rol: CLIENTE
 - `POST /api/auth/jwt/login/` - Login y obtención de tokens
 - `POST /api/auth/jwt/refresh/` - Refresh de token
 
-### Recursos (CRUD)
-- `GET/POST /api/passengers/` - Pasajeros
-- `GET/POST /api/airports/` - Aeropuertos
-- `GET/POST /api/airlines/` - Aerolíneas
+### Recursos con CRUD Completo
+- `GET/POST/PUT/DELETE /api/passengers/` - Pasajeros
+- `GET/POST/PUT/DELETE /api/airports/` - Aeropuertos
+- `GET/POST/PUT/DELETE /api/airlines/` - Aerolíneas
+- `GET/POST/PUT/DELETE /api/crew/` - Tripulación
+- `GET/POST/PUT/DELETE /api/maintenance/` - Mantenimiento
+
+### Recursos con Visualización
 - `GET /api/flights/` - Vuelos
 - `GET /api/bookings/` - Reservas
-- `GET /api/crew/` - Tripulación
-- `GET /api/maintenance/` - Mantenimiento
 
 ## 🎨 Características de la Interfaz
 
@@ -171,9 +181,14 @@ Rol: CLIENTE
   - Administrador: acceso a 12 módulos
   - Usuario regular: acceso limitado a 4 módulos
 - **Gestión de Recursos**: Tablas con listados, filtros y acciones CRUD
-- **Formularios Modales**: Crear y editar recursos
-- **Validaciones**: Campos requeridos, formatos específicos
-- **Feedback Visual**: Mensajes de éxito/error, loaders
+- **Formularios Modales**: Crear y editar recursos con validación completa
+- **Modales de Visualización**: Botón "Ver" para mostrar detalles completos de cada registro
+- **Validaciones**: Campos requeridos, formatos específicos (IATA, emails, fechas)
+- **Feedback Visual**: Mensajes de éxito/error, loaders, confirmaciones
+- **Acciones por Registro**:
+  - **Ver**: Disponible para todos los usuarios (modal de detalles)
+  - **Editar**: Solo usuarios con permisos de edición
+  - **Eliminar**: Solo usuarios con permisos de eliminación
 
 ## 🔧 Funcionalidades Implementadas
 
@@ -183,13 +198,43 @@ Rol: CLIENTE
 - [x] Control de acceso por roles
 - [x] Dashboard administrativo con permisos
 - [x] Listado de recursos consumiendo API real
-- [x] Formularios de creación con validación
-- [x] Eliminación de registros (con confirmación)
-- [x] Manejo de estados de carga
-- [x] Mensajes de éxito/error
+- [x] CRUD completo de Pasajeros (Crear, Leer, Actualizar, Eliminar, Ver)
+- [x] CRUD completo de Aeropuertos (Crear, Leer, Actualizar, Eliminar, Ver)
+- [x] CRUD completo de Aerolíneas (Crear, Leer, Actualizar, Eliminar, Ver)
+- [x] CRUD completo de Tripulación (Crear, Leer, Actualizar, Eliminar, Ver)
+- [x] CRUD completo de Mantenimiento (Crear, Leer, Actualizar, Eliminar, Ver)
+- [x] Formularios de creación con validación completa
+- [x] Modales de visualización de detalles
+- [x] Eliminación de registros con confirmación
+- [x] Manejo de estados de carga y errores
+- [x] Mensajes de éxito/error en operaciones
 - [x] Detección de admin por user_id
 - [x] Interceptor de Axios para tokens
 - [x] Logout y limpieza de sesión
+
+### 📝 Detalles de Implementación
+
+#### Página de Aerolíneas
+- **Campos**: Nombre, Código IATA (2 caracteres), País, Email, Teléfono
+- **Validaciones**: Código IATA en mayúsculas, email válido
+- **Modal Ver**: Muestra toda la información incluyendo fechas
+
+#### Página de Aeropuertos
+- **Campos**: Nombre, Código IATA (3 caracteres), Ciudad, País, Zona Horaria
+- **Validaciones**: Código IATA en mayúsculas
+- **Modal Ver**: Información completa del aeropuerto
+
+#### Página de Tripulación
+- **Campos**: Nombre, Apellido, ID Empleado, Posición, Licencia, Fecha de Contratación, Estado
+- **Posiciones**: Piloto, Copiloto, Auxiliar de vuelo, Ingeniero de vuelo
+- **Estados**: Activo, Inactivo
+- **Modal Ver**: Detalles completos del miembro de tripulación
+
+#### Página de Mantenimiento
+- **Campos**: ID Aeronave, Tipo, Fechas (Programada/Completada), Descripción, Técnico, Estado
+- **Tipos**: Rutinario, Inspección, Reparación, Revisión Mayor
+- **Estados**: Programado, En Progreso, Completado
+- **Modal Ver**: Información completa del registro con badges de estado
 
 **Módulos sin Backend**
 - Catálogo, Facturas, Almacenes y Usuarios muestran mensaje de "No Disponible"
@@ -201,16 +246,23 @@ Rol: CLIENTE
 1. ✅ Pantalla pública (Home)
 2. ✅ Login con validación
 3. ✅ Dashboard admin con menú de módulos
-4. ✅ Listado consumiendo API (Pasajeros/Aeropuertos)
-5. ✅ Formulario de creación (modal)
-6. ✅ Restricción por rol (botones ocultos/deshabilitados)
+4. ✅ Listado consumiendo API (Pasajeros/Aeropuertos/Aerolíneas/Tripulación/Mantenimiento)
+5. ✅ Formularios de creación (modales con validación)
+6. ✅ Formularios de edición (modales con datos precargados)
+7. ✅ Modales de visualización (botón "Ver" con información completa)
+8. ✅ Restricción por rol (botones ocultos/deshabilitados según permisos)
+9. ✅ Eliminación con confirmación
+10. ✅ Mensajes de éxito/error en operaciones
 
 ### Video Demostrativo
 - Navegación por parte pública
 - Proceso de login (admin y usuario regular)
 - Acceso a dashboard según rol
 - Consumo real de endpoints
-- Creación de recursos
+- **Creación** de recursos (Pasajeros, Aerolíneas, Aeropuertos, Tripulación, Mantenimiento)
+- **Visualización** de detalles con botón "Ver"
+- **Edición** de registros existentes
+- **Eliminación** con confirmación
 - Verificación de restricciones por rol
 
 ## 👥 Roles y Restricciones
@@ -230,43 +282,18 @@ const { canCreate, canEdit, canDelete } = useRole();
 - **Admin Dashboard**: Acceso a Vuelos, Reservas, Pasajeros, Aerolíneas, Aeropuertos, Tripulación, Mantenimiento, Catálogo, Facturas, Almacenes, Usuarios
 - **User Dashboard**: Solo Vuelos, Reservas, Pasajeros, Catálogo
 
-## 🐛 Resolución de Problemas
+### Permisos por Módulo
+Cada módulo tiene controles específicos de acceso:
 
-### El servidor da 405 al crear recursos
-- Verificar que el token esté presente en headers (`Authorization: Bearer ...`)
-- Confirmar permisos del usuario en el backend Django
-- Revisar configuración de DRF permissions
-
-### No aparece el dashboard después del login
-- Verificar que el token se guardó en localStorage
-- Comprobar que la decodificación del JWT sea correcta
-- El sistema usa `user_id === 1` para detectar admin
-
-### Errores de CORS
-- El backend debe tener configurado CORS para permitir el origen del frontend
-- Verificar headers `Access-Control-Allow-Origin`
-
-## 📚 Documentación Adicional
-
-- [React Documentation](https://react.dev)
-- [React Router](https://reactrouter.com)
-- [TailwindCSS](https://tailwindcss.com)
-- [Axios](https://axios-http.com)
-
-## 👨‍💻 Desarrollo
-
-Este proyecto fue desarrollado como parte del curso de Desarrollo de Software, implementando:
-- Arquitectura limpia (Clean Architecture)
-- Separación de capas (Application, Domain, Infrastructure, Presentation)
-- Principios SOLID
-- Control de acceso basado en roles (RBAC)
-- Consumo de API REST real
-
-## 📄 Licencia
-
-Este proyecto es parte de un trabajo académico.
-
----
+| Módulo | Ver | Crear | Editar | Eliminar |
+|--------|-----|-------|--------|----------|
+| **Pasajeros** | Todos | Admin/Editor | Admin/Editor | Admin |
+| **Aerolíneas** | Todos | Admin/Editor | Admin/Editor | Admin |
+| **Aeropuertos** | Todos | Admin/Editor | Admin/Editor | Admin |
+| **Tripulación** | Todos | Admin/Editor | Admin/Editor | Admin |
+| **Mantenimiento** | Todos | Admin/Editor | Admin/Editor | Admin |
+| **Vuelos** | Todos | - | - | - |
+| **Reservas** | Todos | - | - | - |
 
 **Última actualización**: Enero 2026  
 **Backend API**: https://vuelos-api.desarrollo-software.xyz  
