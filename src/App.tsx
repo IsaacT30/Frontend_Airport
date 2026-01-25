@@ -9,7 +9,6 @@ import { Register } from './presentation/pages/public/Register';
 
 // Páginas Privadas
 import { Dashboard } from './presentation/pages/private/Dashboard';
-import { AdminDashboard } from './presentation/pages/private/AdminDashboard';
 import { UserDashboard } from './presentation/pages/private/UserDashboard';
 import { FlightsPage } from './presentation/pages/private/FlightsPage';
 import { BookingsPage } from './presentation/pages/private/BookingsPage';
@@ -44,7 +43,7 @@ function App() {
             path="/admin"
             element={
               <RequireAuth>
-                <AdminDashboard />
+                <Dashboard />
               </RequireAuth>
             }
           />
