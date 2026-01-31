@@ -76,7 +76,14 @@ export const FlightsPage = () => {
       return;
     }
 
-    if (!confirm(`¿Deseas reservar el vuelo ${flight.flight_number} por $${flight.price}?`)) {
+    const precio = Number(flight.price || flight.base_price || 0).toFixed(2);
+    const mensaje = `🎫 Confirmar Reserva\n\n` +
+                   `Vuelo: ${flight.flight_number}\n` +
+                   `Ruta: ${flight.origin_airport_name} → ${flight.destination_airport_name}\n` +
+                   `Precio: $${precio}\n\n` +
+                   `¿Deseas continuar con la reserva?`;
+    
+    if (!confirm(mensaje)) {
       return;
     }
 
@@ -86,10 +93,10 @@ export const FlightsPage = () => {
         flight: flight.id,
         passenger: currentPassenger.id,
         seat_number: 'ANY',
-        total_price: flight.price || 0,
+        total_price: Number(flight.price || flight.base_price || 0),
         status: 'pending'
       });
-      alert('✅ ¡Vuelo reservado exitosamente! Redirigiendo a tus reservas...');
+      alert(`✅ ¡Vuelo reservado exitosamente!\n\nTotal a pagar: $${precio}\n\nSerás redirigido a tus reservas donde podrás completar el pago.`);
       navigate('/bookings');
     } catch (err: unknown) {
       console.error('Error booking flight:', err);
@@ -271,7 +278,17 @@ export const FlightsPage = () => {
 
 
 
-  const handleBookingSubmit = async (bookingData: { passenger_name: string; passenger_email: string; passenger_phone: string; seat_number: string }) => {
+  const handleBookingSubmit = async (bookingData: { 
+    passenger_name: string; 
+    passenger_email: string; 
+    passenger_phone: string; 
+    seat_number: string;
+    travel_class: string;
+    checked_baggage: number;
+    carry_on_baggage: number;
+    meal_preference: string;
+    special_requests: string;
+  }) => {
     if (!selectedFlight) return;
     
     try {
@@ -302,13 +319,18 @@ export const FlightsPage = () => {
         throw error;
       }
       
-      // Crear reserva con estado pending
+      // Crear reserva con estado pending y todos los detalles
       const reservaData = {
         flight: selectedFlight.id,
         passenger: passenger.id,
-        seat_number: bookingData.seat_number,
-        total_price: selectedFlight.price || 100,
+        seat_number: bookingData.seat_number || 'AUTO',
+        total_price: Number(selectedFlight.price || selectedFlight.base_price || 100),
         status: 'pending',
+        travel_class: bookingData.travel_class as 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST_CLASS',
+        checked_baggage: bookingData.checked_baggage,
+        carry_on_baggage: bookingData.carry_on_baggage,
+        meal_preference: bookingData.meal_preference,
+        special_requests: bookingData.special_requests,
       };
       
       await bookingService.createBooking(reservaData);
@@ -316,7 +338,8 @@ export const FlightsPage = () => {
       setShowBookingModal(false);
       setSelectedFlight(null);
       
-      alert('✅ Reserva creada exitosamente!\n\nPuedes verla en la sección de Reservas.\nRecuerda completar el pago para confirmarla.');
+      const precio = Number(selectedFlight.price || selectedFlight.base_price || 0).toFixed(2);
+      alert(`✅ Reserva creada exitosamente!\n\nTotal a pagar: $${precio}\n\nSerás redirigido a tus reservas donde podrás completar el pago.`);
       
       navigate('/bookings');
     } catch (error) {
@@ -386,6 +409,9 @@ export const FlightsPage = () => {
                     Llegada
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Precio
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -396,7 +422,7 @@ export const FlightsPage = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {flights.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                       No se encontraron vuelos
                     </td>
                   </tr>
@@ -414,6 +440,11 @@ export const FlightsPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                         {new Date(flight.arrival_time).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-lg font-bold text-green-600">
+                          ${Number(flight.price || flight.base_price || 0).toFixed(2)}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(flight.status)}`}>
@@ -711,7 +742,9 @@ export const FlightsPage = () => {
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <p className="text-gray-600 text-sm mb-1">Precio</p>
-                      <p className="text-3xl font-bold text-green-600">${selectedFlight.price || 0}</p>
+                      <p className="text-3xl font-bold text-green-600">
+                        ${Number(selectedFlight.price || selectedFlight.base_price || 0).toFixed(2)}
+                      </p>
                     </div>
                   </div>
 
@@ -755,7 +788,9 @@ export const FlightsPage = () => {
                     </div>
                     <div>
                       <span className="text-gray-600">Precio:</span>
-                      <span className="ml-2 font-semibold text-green-600">${selectedFlight.price || 0}</span>
+                      <span className="ml-2 font-semibold text-green-600">
+                        ${Number(selectedFlight.price || selectedFlight.base_price || 0).toFixed(2)}
+                      </span>
                     </div>
                     <div>
                       <span className="text-gray-600">Origen:</span>
@@ -776,6 +811,11 @@ export const FlightsPage = () => {
                     passenger_email: formData.get('passenger_email') as string,
                     passenger_phone: formData.get('passenger_phone') as string,
                     seat_number: formData.get('seat_number') as string,
+                    travel_class: formData.get('travel_class') as string,
+                    checked_baggage: Number(formData.get('checked_baggage')),
+                    carry_on_baggage: Number(formData.get('carry_on_baggage')),
+                    meal_preference: formData.get('meal_preference') as string,
+                    special_requests: formData.get('special_requests') as string,
                   });
                 }} className="space-y-4">
                   <div>
@@ -811,20 +851,131 @@ export const FlightsPage = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Asiento *</label>
-                    <select
-                      name="seat_number"
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecciona un asiento</option>
-                      {Array.from({length: 20}, (_, i) => i + 1).map(row => 
-                        ['A', 'B', 'C', 'D', 'E', 'F'].map(col => (
-                          <option key={`${row}${col}`} value={`${row}${col}`}>{row}{col}</option>
-                        ))
-                      )}
-                    </select>
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">Detalles de la Reserva</h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Clase de Viaje *</label>
+                        <select
+                          name="travel_class"
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="ECONOMY">Económica</option>
+                          <option value="PREMIUM_ECONOMY">Económica Premium</option>
+                          <option value="BUSINESS">Ejecutiva</option>
+                          <option value="FIRST_CLASS">Primera Clase</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Número de Asiento *</label>
+                        <input
+                          type="text"
+                          name="seat_number"
+                          placeholder="Ej: 12A"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Deja en blanco para asignación automática</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Maletas Facturadas</label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              const input = e.currentTarget.nextElementSibling as HTMLInputElement;
+                              if (input && Number(input.value) > 0) input.value = String(Number(input.value) - 1);
+                            }}
+                            className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >
+                            <span className="text-xl">-</span>
+                          </button>
+                          <input
+                            type="number"
+                            name="checked_baggage"
+                            defaultValue="1"
+                            min="0"
+                            max="5"
+                            className="w-16 text-center px-2 py-2 border border-gray-300 rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              if (input && Number(input.value) < 5) input.value = String(Number(input.value) + 1);
+                            }}
+                            className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >
+                            <span className="text-xl">+</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Equipaje de Mano</label>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              const input = e.currentTarget.nextElementSibling as HTMLInputElement;
+                              if (input && Number(input.value) > 0) input.value = String(Number(input.value) - 1);
+                            }}
+                            className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >
+                            <span className="text-xl">-</span>
+                          </button>
+                          <input
+                            type="number"
+                            name="carry_on_baggage"
+                            defaultValue="1"
+                            min="0"
+                            max="2"
+                            className="w-16 text-center px-2 py-2 border border-gray-300 rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              if (input && Number(input.value) < 2) input.value = String(Number(input.value) + 1);
+                            }}
+                            className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >
+                            <span className="text-xl">+</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Preferencia de Comida</label>
+                      <select
+                        name="meal_preference"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Sin preferencia</option>
+                        <option value="vegetarian">Vegetariana</option>
+                        <option value="vegan">Vegana</option>
+                        <option value="gluten_free">Sin Gluten</option>
+                        <option value="kosher">Kosher</option>
+                        <option value="halal">Halal</option>
+                        <option value="diabetic">Diabética</option>
+                      </select>
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Solicitudes Especiales (Opcional)</label>
+                      <textarea
+                        name="special_requests"
+                        rows={3}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ej: Asiento cerca de la salida, asistencia especial, etc."
+                      />
+                    </div>
                   </div>
 
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">

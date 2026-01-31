@@ -75,11 +75,35 @@ export const bookingService = {
 
   async patchBooking(id: number, booking: Partial<BookingCreate>): Promise<Booking> {
     try {
+      console.log('PATCH booking request:', { id, data: booking });
       const response = await airportApiClient.patch<Booking>(`/api/bookings/${id}/`, booking);
+      console.log('PATCH booking response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Error patching booking:', error);
-      throw new Error(error.response?.data?.message || 'Failed to patch booking');
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response headers:', error.response?.headers);
+      
+      // Extraer mensaje de error detallado
+      let errorMessage = 'Failed to patch booking';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else {
+          // Errores de validación de campos
+          const errors = Object.entries(error.response.data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('; ');
+          if (errors) errorMessage = errors;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
   },
 

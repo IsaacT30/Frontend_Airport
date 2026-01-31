@@ -59,6 +59,8 @@ export interface Flight {
   available_seats?: number;
   total_seats?: number;
   price?: number;
+  base_price?: number;
+  aircraft_type?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -92,6 +94,14 @@ export interface Booking {
   booking_date: string;
   status: 'confirmed' | 'cancelled' | 'completed' | 'pending';
   total_price: number;
+  travel_class?: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST_CLASS';
+  checked_baggage?: number;
+  carry_on_baggage?: number;
+  meal_preference?: string;
+  special_requests?: string;
+  payment_method?: 'credit_card' | 'debit_card' | 'transfer' | 'cash';
+  amount_paid?: number;
+  balance_due?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -102,6 +112,13 @@ export interface BookingCreate {
   seat_number?: string;
   total_price: number;
   status?: string;
+  travel_class?: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST_CLASS';
+  checked_baggage?: number;
+  carry_on_baggage?: number;
+  meal_preference?: string;
+  special_requests?: string;
+  payment_method?: 'credit_card' | 'debit_card' | 'transfer' | 'cash';
+  amount_paid?: number;
 }
 
 // Tipos de Pasajero
