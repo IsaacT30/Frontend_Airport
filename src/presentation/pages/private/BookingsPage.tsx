@@ -131,7 +131,8 @@ export const BookingsPage = () => {
       };
       
       if (editingBooking) {
-        await bookingService.updateBooking(editingBooking.id, bookingData);
+        // Usar PATCH en lugar de PUT para actualización parcial
+        await bookingService.patchBooking(editingBooking.id, bookingData);
         alert('✅ Reserva actualizada exitosamente!');
       } else {
         await bookingService.createBooking(bookingData);
@@ -150,9 +151,29 @@ export const BookingsPage = () => {
       loadBookings();
     } catch (err) {
       console.error('Error saving booking:', err);
-      const error = err as { response?: { data?: { detail?: string } }; message?: string };
-      const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido';
-      alert(`Error al ${editingBooking ? 'actualizar' : 'crear'} reserva: ` + errorMsg);
+      const error = err as { response?: { data?: any }; message?: string };
+      
+      // Extraer mensaje de error más detallado
+      let errorMsg = 'Error desconocido';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.detail) {
+          errorMsg = error.response.data.detail;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        } else {
+          // Mostrar errores de validación de campos
+          const errors = Object.entries(error.response.data)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('\n');
+          errorMsg = errors || error.message || 'Error desconocido';
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      alert(`❌ Error al ${editingBooking ? 'actualizar' : 'crear'} reserva:\n${errorMsg}`);
     } finally {
       setSaving(false);
     }
@@ -171,6 +192,12 @@ export const BookingsPage = () => {
   };
 
   const handleEdit = (booking: Booking) => {
+    // Solo permitir editar reservas pendientes
+    if (booking.status.toLowerCase() !== 'pending') {
+      alert('⚠️ Solo se pueden editar reservas en estado PENDIENTE');
+      return;
+    }
+    
     setEditingBooking(booking);
     setFormData({
       flight: booking.flight,
@@ -289,7 +316,7 @@ export const BookingsPage = () => {
                       >
                         Ver
                       </button>
-                      {(role === 'ADMIN' || role === 'EDITOR') && (
+                      {(role === 'ADMIN' || role === 'EDITOR') && booking.status.toLowerCase() === 'pending' && (
                         <button 
                           onClick={() => handleEdit(booking)}
                           className="text-indigo-600 hover:text-indigo-900 mr-4"
