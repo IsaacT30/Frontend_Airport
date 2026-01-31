@@ -7,10 +7,10 @@ export const Home = () => {
       <div className="py-12">
         <div className="text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Airport & Flights Management System
+            Sistema de Gestión de Aeropuertos y Vuelos
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Complete solution for managing airports, flights, bookings, and more
+            Solución completa para gestionar aeropuertos, vuelos, reservas y más
           </p>
           
           <div className="flex justify-center space-x-4 mb-16">
@@ -18,13 +18,13 @@ export const Home = () => {
               to="/login"
               className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition"
             >
-              Get Started
+              Comenzar
             </Link>
             <Link
               to="/register"
               className="bg-white text-indigo-600 border-2 border-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-50 transition"
             >
-              Sign Up
+              Registrarse
             </Link>
           </div>
 
@@ -32,49 +32,49 @@ export const Home = () => {
             {/* Features */}
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">✈️</div>
-              <h3 className="text-xl font-semibold mb-2">Flight Management</h3>
+              <h3 className="text-xl font-semibold mb-2">Gestión de Vuelos</h3>
               <p className="text-gray-600">
-                Manage flights, schedules, and routes efficiently
+                Administra vuelos, horarios y rutas eficientemente
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">🎫</div>
-              <h3 className="text-xl font-semibold mb-2">Booking System</h3>
+              <h3 className="text-xl font-semibold mb-2">Sistema de Reservas</h3>
               <p className="text-gray-600">
-                Handle passenger bookings and reservations seamlessly
+                Gestiona reservas y reservaciones de pasajeros sin problemas
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">👨‍✈️</div>
-              <h3 className="text-xl font-semibold mb-2">Crew Management</h3>
+              <h3 className="text-xl font-semibold mb-2">Gestión de Tripulación</h3>
               <p className="text-gray-600">
-                Organize and schedule crew members for flights
+                Organiza y programa miembros de tripulación para vuelos
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">🔧</div>
-              <h3 className="text-xl font-semibold mb-2">Maintenance Tracking</h3>
+              <h3 className="text-xl font-semibold mb-2">Seguimiento de Mantenimiento</h3>
               <p className="text-gray-600">
-                Keep track of aircraft maintenance and inspections
+                Mantén el seguimiento de mantenimiento e inspecciones de aeronaves
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">📄</div>
-              <h3 className="text-xl font-semibold mb-2">Invoice Generation</h3>
+              <h3 className="text-xl font-semibold mb-2">Generación de Facturas</h3>
               <p className="text-gray-600">
-                Generate and manage invoices automatically
+                Genera y administra facturas automáticamente
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-md">
               <div className="text-4xl mb-4">🏭</div>
-              <h3 className="text-xl font-semibold mb-2">Warehouse Management</h3>
+              <h3 className="text-xl font-semibold mb-2">Gestión de Almacén</h3>
               <p className="text-gray-600">
-                Manage inventory and warehouse operations
+                Administra inventario y operaciones de almacén
               </p>
             </div>
           </div>
