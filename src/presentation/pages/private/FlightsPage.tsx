@@ -366,7 +366,7 @@ export const FlightsPage = () => {
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading flights...</p>
+            <p className="mt-4 text-gray-600">Cargando vuelos...</p>
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -374,22 +374,22 @@ export const FlightsPage = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Flight Number
+                    Número de Vuelo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Route
+                    Ruta
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Departure
+                    Salida
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Arrival
+                    Llegada
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Acciones
                   </th>
                 </tr>
               </thead>
@@ -397,7 +397,7 @@ export const FlightsPage = () => {
                 {flights.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                      No flights found
+                      No se encontraron vuelos
                     </td>
                   </tr>
                 ) : (
